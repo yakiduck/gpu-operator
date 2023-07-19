@@ -580,3 +580,29 @@ spec:
     {{- if .Values.sandboxDevicePlugin.args }}
     args: {{ toYaml .Values.sandboxDevicePlugin.args | nindent 6 }}
     {{- end }}
+  gpuManager:
+    enabled: {{ .Values.gpuManager.enabled }}
+    {{- if .Values.gpuManager.repository }}
+    repository: {{ .Values.gpuManager.repository }}
+    {{- end }}
+    {{- if .Values.gpuManager.image }}
+    image: {{ .Values.gpuManager.image }}
+    {{- end }}
+    {{- if .Values.gpuManager.version }}
+    version: {{ .Values.gpuManager.version | quote }}
+    {{- end }}
+    {{- if .Values.gpuManager.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.gpuManager.imagePullPolicy }}
+    {{- end }}
+    {{- if .Values.gpuManager.imagePullSecrets }}
+    imagePullSecrets: {{ toYaml .Values.gpuManager.imagePullSecrets | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.resources }}
+    resources: {{ toYaml .Values.gpuManager.resources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.env }}
+    env: {{ toYaml .Values.gpuManager.env | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.args }}
+    args: {{ toYaml .Values.gpuManager.args | nindent 6 }}
+    {{- end }}

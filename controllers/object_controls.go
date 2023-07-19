@@ -541,6 +541,7 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		"nvidia-mig-manager":                     TransformMIGManager,
 		"nvidia-operator-validator":              TransformValidator,
 		"nvidia-sandbox-validator":               TransformSandboxValidator,
+		"gpu-manager":                            TransformGPUManager,
 	}
 
 	t, ok := transformations[obj.Name]
@@ -1539,6 +1540,52 @@ func TransformSandboxValidator(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolic
 	TransformValidatorComponent(config, &obj.Spec.Template.Spec, "vfio-pci")
 	TransformValidatorComponent(config, &obj.Spec.Template.Spec, "vgpu-manager")
 	TransformValidatorComponent(config, &obj.Spec.Template.Spec, "vgpu-devices")
+
+	return nil
+}
+
+// TransformGPUManager transforms GPU Manager with required config as per ClusterPolicy
+func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
+	// update image
+	fmt.Println("xxxxxxxxxxxxxx:", config.GPUManager)
+	img, err := gpuv1.ImagePath(&config.GPUManager)
+	if err != nil {
+		return err
+	}
+	obj.Spec.Template.Spec.Containers[0].Image = img
+
+	// update image pull policy
+	obj.Spec.Template.Spec.Containers[0].ImagePullPolicy = gpuv1.ImagePullPolicy(config.GPUManager.ImagePullPolicy)
+
+	// set image pull secrets
+	if len(config.GPUManager.ImagePullSecrets) > 0 {
+		for _, secret := range config.GPUManager.ImagePullSecrets {
+			obj.Spec.Template.Spec.ImagePullSecrets = append(obj.Spec.Template.Spec.ImagePullSecrets, v1.LocalObjectReference{Name: secret})
+		}
+	}
+
+	// set resource limits
+	if config.GPUManager.Resources != nil {
+		// apply resource limits to all containers
+		for i := range obj.Spec.Template.Spec.Containers {
+			obj.Spec.Template.Spec.Containers[i].Resources = *config.GPUManager.Resources
+		}
+	}
+
+	// set arguments if specified for driver container
+	if len(config.GPUManager.Args) > 0 {
+		obj.Spec.Template.Spec.Containers[0].Args = config.GPUManager.Args
+	}
+
+	// set/append environment variables for exporter container
+	if len(config.GPUManager.Env) > 0 {
+		for _, env := range config.GPUManager.Env {
+			setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), env.Name, env.Value)
+		}
+	}
+
+	// set RuntimeClass for supported runtimes
+	setRuntimeClass(&obj.Spec.Template.Spec, n.runtime, config.Operator.RuntimeClass)
 
 	return nil
 }

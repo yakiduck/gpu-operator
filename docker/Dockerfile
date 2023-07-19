@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA_IMAGE=nvcr.io/nvidia/cuda
-ARG CUDA_VERSION=undefined
+ARG CUDA_VERSION=11.4.2
 ARG GIT_COMMIT="unknown"
 
 ARG BASE_DIST=ubi8
@@ -70,7 +70,7 @@ ENV VERSION=${VERSION}
 ENV GIT_COMMIT=${GIT_COMMIT}
 
 # Install must-gather dependency: `kubectl`
-RUN OS_ARCH=${TARGETARCH/x86_64/amd64} && OS_ARCH=${OS_ARCH/aarch64/arm64} && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${OS_ARCH}/kubectl
+COPY ./kubectl ./kubectl
 RUN chmod +x ./kubectl
 RUN mv ./kubectl /usr/local/bin
 

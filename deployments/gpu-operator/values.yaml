@@ -48,11 +48,11 @@ validator:
         value: "true"
 
 operator:
-  repository: nvcr.io/nvidia
+  repository: docker.io/taenyang
   image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
   #version: ""
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
   imagePullSecrets: []
   priorityClassName: system-node-critical
   defaultRuntime: docker
@@ -413,3 +413,18 @@ node-feature-discovery:
       - nvidia.com
     serviceAccount:
       name: node-feature-discovery
+
+gpuManager:
+  enabled: true
+  repository: docker.io/tkestack
+  image: gpu-manager
+  version: v1.1.5
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  args: []
+  env:
+    - name: GFD_SLEEP_INTERVAL
+      value: 60s
+    - name: GFD_FAIL_ON_INIT_ERROR
+      value: "true"
+  resources: {}
