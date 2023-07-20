@@ -212,6 +212,12 @@ type InitContainerSpec struct {
 
 // ValidatorSpec describes configuration options for validation pod
 type ValidatorSpec struct {
+	// Enabled indicates if deployment of Validator through operator is enabled
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable Validator deployment through GPU Operator"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	Enabled *bool `json:"enabled,omitempty"`
+
 	// Plugin validator spec
 	Plugin PluginValidatorSpec `json:"plugin,omitempty"`
 
@@ -1699,4 +1705,22 @@ func (l *DriverLicensingConfigSpec) IsNLSEnabled() bool {
 		return false
 	}
 	return *l.NLSEnabled
+}
+
+// IsEnabled returns true if Validators are enabled through gpu-operator
+func (va *ValidatorSpec) IsEnabled() bool {
+	if va.Enabled == nil {
+		// Validators are disabled by default
+		return false
+	}
+	return *va.Enabled
+}
+
+// IsEnabled returns true if GPUManager is enabled through gpu-operator
+func (gm *GPUManagerSpec) IsEnabled() bool {
+	if gm.Enabled == nil {
+		// GPUManager is enabled by default
+		return true
+	}
+	return *gm.Enabled
 }

@@ -1547,7 +1547,6 @@ func TransformSandboxValidator(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolic
 // TransformGPUManager transforms GPU Manager with required config as per ClusterPolicy
 func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
 	// update image
-	fmt.Println("xxxxxxxxxxxxxx:", config.GPUManager)
 	img, err := gpuv1.ImagePath(&config.GPUManager)
 	if err != nil {
 		return err
@@ -3092,6 +3091,22 @@ func DaemonSet(n ClusterPolicyController) (gpuv1.State, error) {
 	state := n.idx
 	obj := n.resources[state].DaemonSet.DeepCopy()
 	obj.Namespace = n.operatorNamespace
+
+	if !*n.singleton.Spec.Validator.Enabled {
+		index := -1
+		for i, c := range n.resources[state].DaemonSet.Spec.Template.Spec.InitContainers {
+			if strings.Contains(c.Name, "validation") {
+				index = i
+				break
+			}
+		}
+		if index != -1 {
+			n.resources[state].DaemonSet.Spec.Template.Spec.InitContainers =
+				n.resources[state].DaemonSet.Spec.Template.Spec.InitContainers[:index+
+					copy(n.resources[state].DaemonSet.Spec.Template.Spec.InitContainers[index:],
+						n.resources[state].DaemonSet.Spec.Template.Spec.InitContainers[index+1:])]
+		}
+	}
 
 	logger := n.rec.Log.WithValues("DaemonSet", obj.Name, "Namespace", obj.Namespace)
 

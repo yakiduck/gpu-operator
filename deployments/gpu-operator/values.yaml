@@ -33,6 +33,7 @@ daemonsets:
     maxUnavailable: "1"
 
 validator:
+  enabled: false
   repository: nvcr.io/nvidia/cloud-native
   image: gpu-operator-validator
   # If version is not specified, then default is to use chart.AppVersion
@@ -423,8 +424,8 @@ gpuManager:
   imagePullSecrets: []
   args: []
   env:
-    - name: GFD_SLEEP_INTERVAL
-      value: 60s
-    - name: GFD_FAIL_ON_INIT_ERROR
-      value: "true"
+    - name: LOG_LEVEL
+      value: "5"
+    - name: EXTRA_FLAGS
+      value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock"
   resources: {}

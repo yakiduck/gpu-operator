@@ -942,11 +942,11 @@ func (n ClusterPolicyController) isStateEnabled(stateName string) bool {
 	case "state-sandbox-validation":
 		return n.sandboxEnabled
 	case "state-operator-validation":
-		return false
+		return clusterPolicySpec.Validator.IsEnabled()
 	case "state-operator-metrics":
 		return true
 	case "state-gpu-manager":
-		return true
+		return clusterPolicySpec.GPUManager.IsEnabled()
 	default:
 		n.rec.Log.Error(nil, "invalid state passed", "stateName", stateName)
 		return false

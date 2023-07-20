@@ -24,17 +24,17 @@ spec:
       serviceAccountName: nvidia-mig-manager
       hostPID: true
       hostIPC: true
-#      initContainers:
-#        - name: toolkit-validation
-#          image: "FILLED BY THE OPERATOR"
-#          command: ['sh', '-c']
-#          args: ["until [ -f /run/nvidia/validations/toolkit-ready ]; do echo waiting for nvidia container toolkit to be setup; sleep 5; done"]
-#          securityContext:
-#            privileged: true
-#          volumeMounts:
-#            - name: run-nvidia
-#              mountPath: /run/nvidia
-#              mountPropagation: HostToContainer
+      initContainers:
+        - name: toolkit-validation
+          image: "FILLED BY THE OPERATOR"
+          command: ['sh', '-c']
+          args: ["until [ -f /run/nvidia/validations/toolkit-ready ]; do echo waiting for nvidia container toolkit to be setup; sleep 5; done"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: run-nvidia
+              mountPath: /run/nvidia
+              mountPropagation: HostToContainer
       containers:
       - name: nvidia-mig-manager
         image: "FILLED BY THE OPERATOR"
