@@ -81,10 +81,16 @@ const (
 	ValidatorImagePullSecretsEnvName = "VALIDATOR_IMAGE_PULL_SECRETS"
 	// ValidatorRuntimeClassEnvName indicates env name of runtime class to be applied to validator pods
 	ValidatorRuntimeClassEnvName = "VALIDATOR_RUNTIME_CLASS"
+	// DevicePluginDefaultConfigMapName indicates name of ConfigMap containing default device plugin config
+	DevicePluginDefaultConfigMapName = "nvidia-plugin-configs"
+	// DevicePluginDefaultConfig indicates name of device plugin default config
+	DevicePluginDefaultConfig = "default"
 	// MigStrategyEnvName indicates env name for passing MIG strategy
 	MigStrategyEnvName = "MIG_STRATEGY"
 	// MigPartedDefaultConfigMapName indicates name of ConfigMap containing default mig-parted config
 	MigPartedDefaultConfigMapName = "default-mig-parted-config"
+	// MigPartedDefaultConfig indicates name of MIG default config
+	MigPartedDefaultConfig = "all-disabled"
 	// MigDefaultGPUClientsConfigMapName indicates name of ConfigMap containing default gpu-clients
 	MigDefaultGPUClientsConfigMapName = "default-gpu-clients"
 	// DCGMRemoteEngineEnvName indicates env name to specify remote DCGM host engine ip:port
@@ -549,6 +555,8 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		return nil
 	}
 
+	setDevicePluginDefaultConfig(&n.singleton.Spec)
+
 	// apply common Daemonset configuration that is applicable to all
 	err := applyCommonDaemonsetConfig(obj, &n.singleton.Spec)
 	if err != nil {
@@ -588,6 +596,13 @@ func applyCommonDaemonsetMetadata(obj *appsv1.DaemonSet, dsSpec *gpuv1.Daemonset
 		for annoKey, annoVal := range dsSpec.Annotations {
 			obj.Spec.Template.ObjectMeta.Annotations[annoKey] = annoVal
 		}
+	}
+}
+
+func setDevicePluginDefaultConfig(config *gpuv1.ClusterPolicySpec) {
+	if config.DevicePlugin.Config == nil {
+		config.DevicePlugin.Config.Name = DevicePluginDefaultConfigMapName
+		config.DevicePlugin.Config.Default = DevicePluginDefaultConfig
 	}
 }
 

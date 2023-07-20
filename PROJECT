@@ -1,5 +1,6 @@
 domain: com
 layout: go.kubebuilder.io/v3
+multigroup: true
 projectName: gpu-operator
 repo: github.com/NVIDIA/gpu-operator
 resources:
@@ -11,6 +12,15 @@ resources:
   group: nvidia
   kind: ClusterPolicy
   path: github.com/NVIDIA/gpu-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: com
+  group: ecns.easystack
+  kind: GpuNodePolicy
+  path: github.com/NVIDIA/gpu-operator/apis/ecns.easystack.com/v1
   version: v1
 version: "3"
 plugins:

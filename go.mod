@@ -3,7 +3,9 @@ module github.com/NVIDIA/gpu-operator
 go 1.19
 
 require (
+	github.com/NVIDIA/k8s-device-plugin v0.13.0
 	github.com/NVIDIA/k8s-operator-libs v0.0.0-20230118182127-8e73980389ca
+	github.com/NVIDIA/mig-parted v0.5.0
 	github.com/NVIDIA/nvidia-container-toolkit v1.12.0-rc.2.0.20230127101129-9fc2c5912242
 	github.com/go-logr/logr v1.2.3
 	github.com/mitchellh/hashstructure v1.1.0
@@ -13,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
-	github.com/urfave/cli/v2 v2.3.0
+	github.com/urfave/cli/v2 v2.4.0
 	gitlab.com/nvidia/cloud-native/go-nvlib v0.0.0-20230119114711-6fe07bb33342
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	k8s.io/api v0.25.3
@@ -111,10 +113,11 @@ require (
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
+	github.com/NVIDIA/go-nvml v0.11.6-0.0.20220823120812-7e2082095e82 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 )

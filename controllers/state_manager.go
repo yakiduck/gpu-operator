@@ -47,7 +47,9 @@ const (
 	//     --> ClusterServiceVersion.metadata.annotations.operatorframework.io/suggested-namespace
 	ocpSuggestedNamespace          = "nvidia-gpu-operator"
 	gpuWorkloadConfigLabelKey      = "nvidia.com/gpu.workload.config"
+	gpuWorkloadConfigNone          = "none"
 	gpuWorkloadConfigContainer     = "container"
+	gpuWorkloadConfigVcuda         = "vcuda"
 	gpuWorkloadConfigVMPassthrough = "vm-passthrough"
 	gpuWorkloadConfigVMVgpu        = "vm-vgpu"
 	podSecurityLabelPrefix         = "pod-security.kubernetes.io/"
@@ -56,11 +58,14 @@ const (
 )
 
 var (
-	defaultGPUWorkloadConfig = gpuWorkloadConfigContainer
+	defaultGPUWorkloadConfig = gpuWorkloadConfigNone
 	podSecurityModes         = []string{"enforce", "audit", "warn"}
 )
 
 var gpuStateLabels = map[string]map[string]string{
+	gpuWorkloadConfigNone: {
+		commonOperandsLabelKey: "false",
+	},
 	gpuWorkloadConfigContainer: {
 		"nvidia.com/gpu.deploy.driver":                "true",
 		"nvidia.com/gpu.deploy.gpu-feature-discovery": "true",
@@ -70,6 +75,10 @@ var gpuStateLabels = map[string]map[string]string{
 		"nvidia.com/gpu.deploy.dcgm-exporter":         "true",
 		"nvidia.com/gpu.deploy.node-status-exporter":  "true",
 		"nvidia.com/gpu.deploy.operator-validator":    "true",
+	},
+	gpuWorkloadConfigVcuda: {
+		"nvidia.com/gpu.deploy.driver":         "true",
+		"easystack.com/gpu.deploy.gpu-manager": "true",
 	},
 	gpuWorkloadConfigVMPassthrough: {
 		"nvidia.com/gpu.deploy.sandbox-device-plugin": "true",
