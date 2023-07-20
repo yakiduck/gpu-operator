@@ -33,11 +33,11 @@ daemonsets:
     maxUnavailable: "1"
 
 validator:
-  enabled: false
+  enabled: true
   repository: nvcr.io/nvidia/cloud-native
   image: gpu-operator-validator
   # If version is not specified, then default is to use chart.AppVersion
-  #version: ""
+  version: v23.6.0
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
   env: []
@@ -46,24 +46,25 @@ validator:
   plugin:
     env:
       - name: WITH_WORKLOAD
-        value: "true"
+        value: "false"
 
 operator:
-  repository: docker.io/taenyang
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: gpu-operator
   # If version is not specified, then default is to use chart.AppVersion
-  #version: ""
+  version: v22.9.2-es
   imagePullPolicy: Always
   imagePullSecrets: []
   priorityClassName: system-node-critical
-  defaultRuntime: docker
+  defaultRuntime: containerd
   runtimeClass: nvidia
   use_ocp_driver_toolkit: false
   # cleanup CRD on chart un-install
   cleanupCRD: false
   # upgrade CRD on chart upgrade, requires --disable-openapi-validation flag
   # to be passed during helm upgrade.
-  upgradeCRD: false
+  upgradeCRD: true
   initContainer:
     image: cuda
     repository: nvcr.io/nvidia
@@ -101,11 +102,10 @@ operator:
       cpu: 200m
       memory: 100Mi
 
-mig:
-  strategy: single
+mig: {}
 
 driver:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia
   image: driver
   version: "525.60.13"
@@ -178,7 +178,7 @@ driver:
     name: ""
 
 toolkit:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia/k8s
   image: container-toolkit
   version: v1.11.0-ubuntu20.04
@@ -190,10 +190,11 @@ toolkit:
 
 devicePlugin:
   enabled: true
-  repository: nvcr.io/nvidia
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: k8s-device-plugin
-  version: v0.13.0-ubi8
-  imagePullPolicy: IfNotPresent
+  version: v0.13.0-es
+  imagePullPolicy: Always
   imagePullSecrets: []
   args: []
   env:
@@ -289,10 +290,11 @@ gfd:
 
 migManager:
   enabled: true
-  repository: nvcr.io/nvidia/cloud-native
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: k8s-mig-manager
-  version: v0.5.0-ubuntu20.04
-  imagePullPolicy: IfNotPresent
+  version: v0.5.0-es
+  imagePullPolicy: Always
   imagePullSecrets: []
   env:
     - name: WITH_REBOOT
@@ -344,7 +346,7 @@ vgpuManager:
         value: "false"
 
 vgpuDeviceManager:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia/cloud-native
   image: vgpu-device-manager
   version: "v0.2.0"
@@ -356,7 +358,7 @@ vgpuDeviceManager:
     default: "default"
 
 vfioManager:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia
   image: cuda
   version: 11.7.1-base-ubi8
@@ -376,7 +378,7 @@ vfioManager:
         value: "false"
 
 sandboxDevicePlugin:
-  enabled: true
+  enabled: false
   repository: nvcr.io/nvidia
   image: kubevirt-gpu-device-plugin
   version: v1.2.1
@@ -417,26 +419,30 @@ node-feature-discovery:
 
 gpuManager:
   enabled: true
-  repository: docker.io/tkestack
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: gpu-manager
-  version: v1.1.5
-  imagePullPolicy: IfNotPresent
+  version: latest
+  #version: v1.1.5-es
+  imagePullPolicy: Always
   imagePullSecrets: []
   args: []
   env:
     - name: LOG_LEVEL
       value: "5"
     - name: EXTRA_FLAGS
-      value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock"
+      value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock --cgroup-driver=systemd"
   resources: {}
 
 gpuAdmission:
   enabled: true
   replicas: 3
-  repository: docker.io/thomassong
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: gpu-admission
-  version: 47d56ae9
-  imagePullPolicy: IfNotPresent
+  version: latest
+  #version: v1.1.5-es
+  imagePullPolicy: Always
   imagePullSecrets: []
   args: []
   env:

@@ -81,10 +81,16 @@ const (
 	ValidatorImagePullSecretsEnvName = "VALIDATOR_IMAGE_PULL_SECRETS"
 	// ValidatorRuntimeClassEnvName indicates env name of runtime class to be applied to validator pods
 	ValidatorRuntimeClassEnvName = "VALIDATOR_RUNTIME_CLASS"
+	// DevicePluginDefaultConfigMapName indicates name of ConfigMap containing default device plugin config
+	DevicePluginDefaultConfigMapName = "nvidia-plugin-configs"
+	// DevicePluginDefaultConfig indicates name of device plugin default config
+	DevicePluginDefaultConfig = "default"
 	// MigStrategyEnvName indicates env name for passing MIG strategy
 	MigStrategyEnvName = "MIG_STRATEGY"
 	// MigPartedDefaultConfigMapName indicates name of ConfigMap containing default mig-parted config
 	MigPartedDefaultConfigMapName = "default-mig-parted-config"
+	// MigPartedDefaultConfig indicates name of MIG default config
+	MigPartedDefaultConfig = "all-disabled"
 	// MigDefaultGPUClientsConfigMapName indicates name of ConfigMap containing default gpu-clients
 	MigDefaultGPUClientsConfigMapName = "default-gpu-clients"
 	// DCGMRemoteEngineEnvName indicates env name to specify remote DCGM host engine ip:port
@@ -174,6 +180,13 @@ var SubscriptionPathMap = map[string]([]corev1.KeyToPath){
 			Path: "/etc/SUSEConnect",
 		},
 	},
+}
+
+type empty struct{}
+
+var ConfigMapNotUpdate = map[string]empty{
+	DevicePluginDefaultConfigMapName: {},
+	MigPartedDefaultConfigMapName:    {},
 }
 
 type controlFunc []func(n ClusterPolicyController) (gpuv1.State, error)
@@ -463,6 +476,11 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 			return gpuv1.NotReady, err
 		}
 
+		if _, ok := ConfigMapNotUpdate[obj.Name]; ok {
+			logger.Info("Resource does not need to be updated")
+			return gpuv1.Ready, nil
+		}
+
 		logger.Info("Found Resource, updating...")
 		err = n.rec.Client.Update(ctx, obj)
 		if err != nil {
@@ -566,6 +584,8 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		return nil
 	}
 
+	setDevicePluginDefaultConfig(&n.singleton.Spec)
+
 	// apply common Daemonset configuration that is applicable to all
 	err := applyCommonDaemonsetConfig(obj, &n.singleton.Spec)
 	if err != nil {
@@ -626,6 +646,15 @@ func applyCommonDaemonsetMetadata(obj *appsv1.DaemonSet, dsSpec *gpuv1.Daemonset
 	if len(dsSpec.Annotations) > 0 {
 		for annoKey, annoVal := range dsSpec.Annotations {
 			obj.Spec.Template.ObjectMeta.Annotations[annoKey] = annoVal
+		}
+	}
+}
+
+func setDevicePluginDefaultConfig(config *gpuv1.ClusterPolicySpec) {
+	if config.DevicePlugin.Config == nil {
+		config.DevicePlugin.Config = &gpuv1.DevicePluginConfig{
+			Name:    DevicePluginDefaultConfigMapName,
+			Default: DevicePluginDefaultConfig,
 		}
 	}
 }
@@ -1926,17 +1955,11 @@ func setContainerEnv(c *corev1.Container, key, value string) {
 }
 
 func getRuntimeClass(config *gpuv1.ClusterPolicySpec) string {
-	if config.Operator.RuntimeClass != "" {
-		return config.Operator.RuntimeClass
-	}
-	return DefaultRuntimeClass
+	return config.Operator.RuntimeClass
 }
 
 func setRuntimeClass(podSpec *corev1.PodSpec, runtime gpuv1.Runtime, runtimeClass string) {
-	if runtime == gpuv1.Containerd {
-		if runtimeClass == "" {
-			runtimeClass = DefaultRuntimeClass
-		}
+	if runtime == gpuv1.Containerd && runtimeClass != "" {
 		podSpec.RuntimeClassName = &runtimeClass
 	}
 }
@@ -3677,6 +3700,9 @@ func transformRuntimeClassLegacy(n ClusterPolicyController) (gpuv1.State, error)
 
 	// apply runtime class name as per ClusterPolicy
 	runtimeClassName := getRuntimeClass(&n.singleton.Spec)
+	if runtimeClassName == "" {
+		return gpuv1.Ready, nil
+	}
 	obj.Name = runtimeClassName
 	obj.Handler = runtimeClassName
 
@@ -3720,6 +3746,9 @@ func transformRuntimeClass(n ClusterPolicyController) (gpuv1.State, error) {
 
 	// apply runtime class name as per ClusterPolicy
 	runtimeClassName := getRuntimeClass(&n.singleton.Spec)
+	if runtimeClassName == "" {
+		return gpuv1.Ready, nil
+	}
 	obj.Name = runtimeClassName
 	obj.Handler = runtimeClassName
 

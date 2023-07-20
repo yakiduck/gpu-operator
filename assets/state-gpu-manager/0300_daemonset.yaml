@@ -34,7 +34,7 @@ spec:
       priorityClassName: "system-node-critical"
       # only run node has gpu device
       nodeSelector:
-        nvidia-device-enable: enable
+        ecns.easystack.com/gpu.deploy.gpu-manager: "true"
       hostPID: true
       containers:
         - image: "FILLED BY THE OPERATOR"

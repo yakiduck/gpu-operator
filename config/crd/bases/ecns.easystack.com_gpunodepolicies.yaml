@@ -1,0 +1,190 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: gpunodepolicies.ecns.easystack.com
+spec:
+  group: ecns.easystack.com
+  names:
+    kind: GpuNodePolicy
+    listKind: GpuNodePolicyList
+    plural: gpunodepolicies
+    singular: gpunodepolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: GpuNodePolicy is the Schema for the gpunodepolicies API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GpuNodePolicySpec defines the desired state of GpuNodePolicy
+            properties:
+              deviceMode:
+                description: NicSelector selects the NICs to be configured GpuSelector
+                  GpuSelector `json:"gpuSelector,omitempty" yaml:"gpuSelector,omitempty"`
+                  The driver type for configured VFs. Allowed value "netdevice", "vfio-pci".
+                  Defaults to netdevice.
+                enum:
+                - vcuda
+                - time-slicing
+                - mig
+                type: string
+              mig:
+                description: MigConfigSpec defines the spec to declare the desired
+                  MIG configuration for a set of GPUs.
+                properties:
+                  configs:
+                    items:
+                      properties:
+                        device-filter:
+                          type: string
+                        devices:
+                          type: string
+                        mig-devices:
+                          additionalProperties:
+                            type: integer
+                          description: MigConfig holds a map of strings representing
+                            a MigProfile to a count of that profile type. It is meant
+                            to represent the set of MIG profiles (and how many of
+                            a particular type) should be instantiated on a GPU.
+                          type: object
+                      required:
+                      - devices
+                      - mig-devices
+                      type: object
+                    type: array
+                  strategy:
+                    enum:
+                    - none
+                    - single
+                    - mixed
+                    type: string
+                required:
+                - strategy
+                type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: NodeSelector selects the nodes to be configured
+                type: object
+              priority:
+                description: Priority of the policy, higher priority policies can
+                  override lower ones.
+                maximum: 99
+                minimum: 0
+                type: integer
+              timeSlicing:
+                description: TimeSlicingConfigSpec defines the set of replicas to
+                  be made for timeSlicing available resources.
+                properties:
+                  failRequestsGreaterThanOne:
+                    type: boolean
+                  renameByDefault:
+                    type: boolean
+                  resources:
+                    items:
+                      description: ReplicatedResource represents a resource to be
+                        replicated.
+                      properties:
+                        name:
+                          type: string
+                        rename:
+                          type: string
+                        replicas:
+                          type: integer
+                      required:
+                      - name
+                      - replicas
+                      type: object
+                    type: array
+                type: object
+              vcuda:
+                type: object
+            required:
+            - deviceMode
+            - nodeSelector
+            type: object
+          status:
+            description: GpuNodePolicyStatus defines the observed state of GpuNodePolicy
+            properties:
+              nodes:
+                additionalProperties:
+                  properties:
+                    mig:
+                      properties:
+                        devicePlugin:
+                          properties:
+                            sync:
+                              type: boolean
+                          required:
+                          - sync
+                          type: object
+                        enabled:
+                          type: boolean
+                        migParted:
+                          properties:
+                            sync:
+                              type: boolean
+                          required:
+                          - sync
+                          type: object
+                      required:
+                      - devicePlugin
+                      - enabled
+                      - migParted
+                      type: object
+                    timeSlicing:
+                      properties:
+                        devicePlugin:
+                          properties:
+                            sync:
+                              type: boolean
+                          required:
+                          - sync
+                          type: object
+                        enabled:
+                          type: boolean
+                      required:
+                      - devicePlugin
+                      - enabled
+                      type: object
+                    vcuda:
+                      properties:
+                        enabled:
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
+                  type: object
+                description: Nodes record all gpu sync status
+                type: object
+            required:
+            - nodes
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

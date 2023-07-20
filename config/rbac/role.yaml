@@ -104,6 +104,32 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - image.openshift.io
   resources:
   - imagestreams

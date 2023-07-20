@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA_IMAGE=nvcr.io/nvidia/cuda
-ARG CUDA_VERSION=11.4.2
+ARG CUDA_VERSION=undefined
 ARG GIT_COMMIT="unknown"
 
 ARG BASE_DIST=ubi8
@@ -32,6 +32,7 @@ COPY vendor vendor
 # Copy the go source
 COPY main.go main.go
 COPY api/ api/
+COPY apis/ apis/
 COPY controllers/ controllers/
 
 # Build
@@ -48,6 +49,7 @@ ENV NVIDIA_VISIBLE_DEVICES=void
 ARG VERSION
 ARG TARGETARCH
 ARG GIT_COMMIT="unknown"
+ARG KUBERNETES_VERSION="v1.26.4"
 
 LABEL io.k8s.display-name="NVIDIA GPU Operator"
 LABEL name="NVIDIA GPU Operator"
@@ -70,12 +72,13 @@ ENV VERSION=${VERSION}
 ENV GIT_COMMIT=${GIT_COMMIT}
 
 # Install must-gather dependency: `kubectl`
-RUN OS_ARCH=${TARGETARCH/x86_64/amd64} && OS_ARCH=${OS_ARCH/aarch64/arm64} && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${OS_ARCH}/kubectl
+RUN OS_ARCH=${TARGETARCH/x86_64/amd64} && OS_ARCH=${OS_ARCH/aarch64/arm64} && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/linux/${OS_ARCH}/kubectl
 RUN chmod +x ./kubectl
 RUN mv ./kubectl /usr/local/bin
 
 # Add CRD resource into the image for helm upgrades
 COPY deployments/gpu-operator/crds/nvidia.com_clusterpolicies_crd.yaml /opt/gpu-operator/nvidia.com_clusterpolicies_crd.yaml
+COPY deployments/gpu-operator/crds/ecns.easystack.com_gpunodepolicies_crd.yaml /opt/gpu-operator/ecns.easystack.com_gpunodepolicies_crd.yaml
 
 # Install / upgrade packages here that are required to resolve CVEs
 ARG CVE_UPDATES
