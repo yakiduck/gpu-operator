@@ -558,7 +558,6 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		"nvidia-operator-validator":              TransformValidator,
 		"nvidia-sandbox-validator":               TransformSandboxValidator,
 		"gpu-manager":                            TransformGPUManager,
-		"gpu-admission":                          TransformGPUAdmission,
 	}
 
 	t, ok := transformations[obj.Name]
@@ -583,6 +582,28 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 
 	// apply custom Labels and Annotations to the podSpec if any
 	applyCommonDaemonsetMetadata(obj, &n.singleton.Spec.Daemonsets)
+
+	return nil
+}
+
+func preProcessDeployment(obj *appsv1.Deployment, n ClusterPolicyController) error {
+	logger := n.rec.Log.WithValues("Deployment", obj.Name)
+	transformations := map[string]func(*appsv1.Deployment, *gpuv1.ClusterPolicySpec, ClusterPolicyController) error{
+		"gpu-admission": TransformGPUAdmission,
+	}
+
+	t, ok := transformations[obj.Name]
+	if !ok {
+		logger.Info(fmt.Sprintf("No transformation for Deployment '%s'", obj.Name))
+		return nil
+	}
+
+	// apply per operand Deployment config
+	err := t(obj, &n.singleton.Spec, n)
+	if err != nil {
+		logger.Error(err, "Failed to apply transformation", "resource", obj.Name)
+		return err
+	}
 
 	return nil
 }
@@ -1607,7 +1628,7 @@ func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec,
 }
 
 // TransformGPUAdmission transforms GPU Admission with required config as per ClusterPolicy
-func TransformGPUAdmission(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
+func TransformGPUAdmission(obj *appsv1.Deployment, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
 	// update image
 	img, err := gpuv1.ImagePath(&config.GPUAdmission)
 	if err != nil {
@@ -2827,6 +2848,12 @@ func Deployment(n ClusterPolicyController) (gpuv1.State, error) {
 			return gpuv1.NotReady, err
 		}
 		return gpuv1.Disabled, nil
+	}
+
+	err := preProcessDeployment(obj, n)
+	if err != nil {
+		logger.Info("Could not pre-process deployment", "Error", err)
+		return gpuv1.NotReady, err
 	}
 
 	if err := controllerutil.SetControllerReference(n.singleton, obj, n.rec.Scheme); err != nil {
