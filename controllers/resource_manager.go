@@ -37,7 +37,7 @@ type Resources struct {
 	Role                       rbacv1.Role
 	RoleBinding                rbacv1.RoleBinding
 	ClusterRole                rbacv1.ClusterRole
-	ClusterRoleBinding         rbacv1.ClusterRoleBinding
+	ClusterRoleBindings        []rbacv1.ClusterRoleBinding
 	ConfigMaps                 []corev1.ConfigMap
 	DaemonSet                  appsv1.DaemonSet
 	Deployment                 appsv1.Deployment
@@ -124,9 +124,13 @@ func addResourcesControls(n *ClusterPolicyController, path string) (Resources, c
 			panicIfError(err)
 			ctrl = append(ctrl, ClusterRole)
 		case "ClusterRoleBinding":
-			_, _, err := s.Decode(m, nil, &res.ClusterRoleBinding)
+			crb := rbacv1.ClusterRoleBinding{}
+			_, _, err := s.Decode(m, nil, &crb)
 			panicIfError(err)
-			ctrl = append(ctrl, ClusterRoleBinding)
+			res.ClusterRoleBindings = append(res.ClusterRoleBindings, crb)
+			if len(res.ClusterRoleBindings) == 1 {
+				ctrl = append(ctrl, ClusterRoleBindings)
+			}
 		case "ConfigMap":
 			cm := corev1.ConfigMap{}
 			_, _, err := s.Decode(m, nil, &cm)

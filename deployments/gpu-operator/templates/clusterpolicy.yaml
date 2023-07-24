@@ -607,3 +607,29 @@ spec:
     {{- if .Values.gpuManager.args }}
     args: {{ toYaml .Values.gpuManager.args | nindent 6 }}
     {{- end }}
+  gpuAdmission:
+    enabled: {{ .Values.gpuAdmission.enabled }}
+    {{- if .Values.gpuAdmission.repository }}
+    repository: {{ .Values.gpuAdmission.repository }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.image }}
+    image: {{ .Values.gpuAdmission.image }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.version }}
+    version: {{ .Values.gpuAdmission.version | quote }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.gpuAdmission.imagePullPolicy }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.imagePullSecrets }}
+    imagePullSecrets: {{ toYaml .Values.gpuAdmission.imagePullSecrets | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.resources }}
+    resources: {{ toYaml .Values.gpuAdmission.resources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.env }}
+    env: {{ toYaml .Values.gpuAdmission.env | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.args }}
+    args: {{ toYaml .Values.gpuAdmission.args | nindent 6 }}
+    {{- end }}

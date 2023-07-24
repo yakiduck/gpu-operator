@@ -346,11 +346,11 @@ func ClusterRole(n ClusterPolicyController) (gpuv1.State, error) {
 	return gpuv1.Ready, nil
 }
 
-// ClusterRoleBinding creates ClusterRoleBinding resource
-func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
+// createClusterRoleBinding creates a ClusterRoleBinding resource
+func createClusterRoleBinding(n ClusterPolicyController, clusterRoleBindingIdx int) (gpuv1.State, error) {
 	ctx := n.ctx
 	state := n.idx
-	obj := n.resources[state].ClusterRoleBinding.DeepCopy()
+	obj := n.resources[state].ClusterRoleBindings[clusterRoleBindingIdx].DeepCopy()
 	obj.Namespace = n.operatorNamespace
 
 	logger := n.rec.Log.WithValues("ClusterRoleBinding", obj.Name, "Namespace", obj.Namespace)
@@ -389,6 +389,22 @@ func ClusterRoleBinding(n ClusterPolicyController) (gpuv1.State, error) {
 	}
 
 	return gpuv1.Ready, nil
+}
+
+// ClusterRoleBindings creates ClusterRoleBinding resource(s)
+func ClusterRoleBindings(n ClusterPolicyController) (gpuv1.State, error) {
+	status := gpuv1.Ready
+	state := n.idx
+	for i := range n.resources[state].ClusterRoleBindings {
+		stat, err := createClusterRoleBinding(n, i)
+		if err != nil {
+			return stat, err
+		}
+		if stat != gpuv1.Ready {
+			status = gpuv1.NotReady
+		}
+	}
+	return status, nil
 }
 
 // createConfigMap creates a ConfigMap resource
@@ -542,6 +558,7 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		"nvidia-operator-validator":              TransformValidator,
 		"nvidia-sandbox-validator":               TransformSandboxValidator,
 		"gpu-manager":                            TransformGPUManager,
+		"gpu-admission":                          TransformGPUAdmission,
 	}
 
 	t, ok := transformations[obj.Name]
@@ -1579,6 +1596,51 @@ func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec,
 	// set/append environment variables for exporter container
 	if len(config.GPUManager.Env) > 0 {
 		for _, env := range config.GPUManager.Env {
+			setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), env.Name, env.Value)
+		}
+	}
+
+	// set RuntimeClass for supported runtimes
+	setRuntimeClass(&obj.Spec.Template.Spec, n.runtime, config.Operator.RuntimeClass)
+
+	return nil
+}
+
+// TransformGPUAdmission transforms GPU Admission with required config as per ClusterPolicy
+func TransformGPUAdmission(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
+	// update image
+	img, err := gpuv1.ImagePath(&config.GPUAdmission)
+	if err != nil {
+		return err
+	}
+	obj.Spec.Template.Spec.Containers[0].Image = img
+
+	// update image pull policy
+	obj.Spec.Template.Spec.Containers[0].ImagePullPolicy = gpuv1.ImagePullPolicy(config.GPUAdmission.ImagePullPolicy)
+
+	// set image pull secrets
+	if len(config.GPUAdmission.ImagePullSecrets) > 0 {
+		for _, secret := range config.GPUAdmission.ImagePullSecrets {
+			obj.Spec.Template.Spec.ImagePullSecrets = append(obj.Spec.Template.Spec.ImagePullSecrets, v1.LocalObjectReference{Name: secret})
+		}
+	}
+
+	// set resource limits
+	if config.GPUAdmission.Resources != nil {
+		// apply resource limits to all containers
+		for i := range obj.Spec.Template.Spec.Containers {
+			obj.Spec.Template.Spec.Containers[i].Resources = *config.GPUAdmission.Resources
+		}
+	}
+
+	// set arguments if specified for driver container
+	if len(config.GPUAdmission.Args) > 0 {
+		obj.Spec.Template.Spec.Containers[0].Args = config.GPUAdmission.Args
+	}
+
+	// set/append environment variables for exporter container
+	if len(config.GPUAdmission.Env) > 0 {
+		for _, env := range config.GPUAdmission.Env {
 			setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), env.Name, env.Value)
 		}
 	}

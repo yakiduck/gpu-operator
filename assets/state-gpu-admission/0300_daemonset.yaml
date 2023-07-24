@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: scheduler
+    tier: control-plane
+  name: gpu-admission
+  namespace: "FILLED BY THE OPERATOR"
+spec:
+  selector:
+    matchLabels:
+      component: scheduler
+      tier: control-plane
+  template:
+    metadata:
+      labels:
+        component: scheduler
+        tier: control-plane
+        version: second
+    spec:
+      serviceAccountName: gpu-admission
+      containers:
+        - image: "FILLED BY THE OPERATOR"
+          imagePullPolicy: "FILLED BY THE OPERATOR"
+          name: gpu-admission
+          env:
+            - name: LOG_LEVEL
+              value: "FILLED BY THE OPERATOR"
+          ports:
+            - containerPort: 3456
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      priorityClassName: system-cluster-critical
+      nodeSelector:
+        nvidia-device-admission-enable: enable

@@ -771,6 +771,7 @@ func (n *ClusterPolicyController) init(ctx context.Context, reconciler *ClusterP
 		addState(n, "/opt/gpu-operator/state-vfio-manager")
 		addState(n, "/opt/gpu-operator/state-sandbox-device-plugin")
 		addState(n, "/opt/gpu-operator/state-gpu-manager")
+		addState(n, "/opt/gpu-operator/state-gpu-admission")
 	}
 
 	if clusterPolicy.Spec.SandboxWorkloads.IsEnabled() {
@@ -947,6 +948,8 @@ func (n ClusterPolicyController) isStateEnabled(stateName string) bool {
 		return true
 	case "state-gpu-manager":
 		return clusterPolicySpec.GPUManager.IsEnabled()
+	case "state-gpu-admission":
+		return clusterPolicySpec.GPUAdmission.IsEnabled()
 	default:
 		n.rec.Log.Error(nil, "invalid state passed", "stateName", stateName)
 		return false

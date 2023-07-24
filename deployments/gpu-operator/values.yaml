@@ -429,3 +429,16 @@ gpuManager:
     - name: EXTRA_FLAGS
       value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock"
   resources: {}
+
+gpuAdmission:
+  enabled: true
+  repository: docker.io/thomassong
+  image: gpu-admission
+  version: 47d56ae9
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+  args: []
+  env:
+    - name: LOG_LEVEL
+      value: "4"
+  resources: {}
