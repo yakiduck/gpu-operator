@@ -1379,6 +1379,12 @@ type GPUAdmissionSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	Enabled *bool `json:"enabled,omitempty"`
 
+	// GPUAdmission deployment replicas
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="GPUAdmission deployment replicas"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	Replicas int32 `json:"replicas,omitempty"`
+
 	// GPU Admission image repository
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
@@ -1422,6 +1428,12 @@ type GPUAdmissionSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment Variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Optional: Variables of NodeSelector
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="NodeSelector Variables"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // MIGStrategy indicates MIG mode

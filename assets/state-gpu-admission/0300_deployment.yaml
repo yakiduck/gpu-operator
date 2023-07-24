@@ -7,6 +7,7 @@ metadata:
   name: gpu-admission
   namespace: "FILLED BY THE OPERATOR"
 spec:
+  replicas: 1
   selector:
     matchLabels:
       component: scheduler
@@ -32,4 +33,4 @@ spec:
       hostNetwork: true
       priorityClassName: system-cluster-critical
       nodeSelector:
-        nvidia-device-admission-enable: enable
+        nvidia-device-admission-enable: "FILLED BY THE OPERATOR"

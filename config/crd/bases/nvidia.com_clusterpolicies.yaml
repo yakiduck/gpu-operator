@@ -1559,6 +1559,15 @@ spec:
                     items:
                       type: string
                     type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: 'Optional: Variables of NodeSelector'
+                    type: object
+                  replicas:
+                    description: GPUAdmission deployment replicas
+                    format: int32
+                    type: integer
                   repository:
                     description: GPU Admission image repository
                     type: string

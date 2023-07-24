@@ -1639,6 +1639,9 @@ func TransformGPUAdmission(obj *appsv1.Deployment, config *gpuv1.ClusterPolicySp
 	// update image pull policy
 	obj.Spec.Template.Spec.Containers[0].ImagePullPolicy = gpuv1.ImagePullPolicy(config.GPUAdmission.ImagePullPolicy)
 
+	//set replicas
+	obj.Spec.Replicas = &config.GPUAdmission.Replicas
+
 	// set image pull secrets
 	if len(config.GPUAdmission.ImagePullSecrets) > 0 {
 		for _, secret := range config.GPUAdmission.ImagePullSecrets {
@@ -1669,6 +1672,10 @@ func TransformGPUAdmission(obj *appsv1.Deployment, config *gpuv1.ClusterPolicySp
 	// set RuntimeClass for supported runtimes
 	setRuntimeClass(&obj.Spec.Template.Spec, n.runtime, config.Operator.RuntimeClass)
 
+	// set nodeSelector
+	if len(config.GPUAdmission.NodeSelector) > 0 {
+		obj.Spec.Template.Spec.NodeSelector = config.GPUAdmission.NodeSelector
+	}
 	return nil
 }
 

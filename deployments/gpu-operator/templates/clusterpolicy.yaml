@@ -609,6 +609,7 @@ spec:
     {{- end }}
   gpuAdmission:
     enabled: {{ .Values.gpuAdmission.enabled }}
+    replicas: {{ .Values.gpuAdmission.replicas }}
     {{- if .Values.gpuAdmission.repository }}
     repository: {{ .Values.gpuAdmission.repository }}
     {{- end }}
@@ -632,4 +633,7 @@ spec:
     {{- end }}
     {{- if .Values.gpuAdmission.args }}
     args: {{ toYaml .Values.gpuAdmission.args | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.nodeSelector }}
+    nodeSelector: {{ toYaml .Values.gpuAdmission.nodeSelector | nindent 6 }}
     {{- end }}
