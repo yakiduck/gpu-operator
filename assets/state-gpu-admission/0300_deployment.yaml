@@ -29,8 +29,6 @@ spec:
               value: "FILLED BY THE OPERATOR"
           ports:
             - containerPort: 3456
-      dnsPolicy: ClusterFirstWithHostNet
-      hostNetwork: true
       priorityClassName: system-cluster-critical
       nodeSelector:
-        nvidia-device-admission-enable: "FILLED BY THE OPERATOR"
+        xxx: "FILLED BY THE OPERATOR"
