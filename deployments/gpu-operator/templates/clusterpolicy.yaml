@@ -64,6 +64,7 @@ spec:
       maxUnavailable: {{ .Values.daemonsets.rollingUpdate.maxUnavailable | quote }}
     {{- end }}
   validator:
+    enabled: {{ .Values.validator.enabled }}
     {{- if .Values.validator.repository }}
     repository: {{ .Values.validator.repository }}
     {{- end }}
@@ -579,4 +580,60 @@ spec:
     {{- end }}
     {{- if .Values.sandboxDevicePlugin.args }}
     args: {{ toYaml .Values.sandboxDevicePlugin.args | nindent 6 }}
+    {{- end }}
+  gpuManager:
+    enabled: {{ .Values.gpuManager.enabled }}
+    {{- if .Values.gpuManager.repository }}
+    repository: {{ .Values.gpuManager.repository }}
+    {{- end }}
+    {{- if .Values.gpuManager.image }}
+    image: {{ .Values.gpuManager.image }}
+    {{- end }}
+    {{- if .Values.gpuManager.version }}
+    version: {{ .Values.gpuManager.version | quote }}
+    {{- end }}
+    {{- if .Values.gpuManager.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.gpuManager.imagePullPolicy }}
+    {{- end }}
+    {{- if .Values.gpuManager.imagePullSecrets }}
+    imagePullSecrets: {{ toYaml .Values.gpuManager.imagePullSecrets | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.resources }}
+    resources: {{ toYaml .Values.gpuManager.resources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.env }}
+    env: {{ toYaml .Values.gpuManager.env | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuManager.args }}
+    args: {{ toYaml .Values.gpuManager.args | nindent 6 }}
+    {{- end }}
+  gpuAdmission:
+    enabled: {{ .Values.gpuAdmission.enabled }}
+    replicas: {{ .Values.gpuAdmission.replicas }}
+    {{- if .Values.gpuAdmission.repository }}
+    repository: {{ .Values.gpuAdmission.repository }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.image }}
+    image: {{ .Values.gpuAdmission.image }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.version }}
+    version: {{ .Values.gpuAdmission.version | quote }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.gpuAdmission.imagePullPolicy }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.imagePullSecrets }}
+    imagePullSecrets: {{ toYaml .Values.gpuAdmission.imagePullSecrets | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.resources }}
+    resources: {{ toYaml .Values.gpuAdmission.resources | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.env }}
+    env: {{ toYaml .Values.gpuAdmission.env | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.args }}
+    args: {{ toYaml .Values.gpuAdmission.args | nindent 6 }}
+    {{- end }}
+    {{- if .Values.gpuAdmission.nodeSelector }}
+    nodeSelector: {{ toYaml .Values.gpuAdmission.nodeSelector | nindent 6 }}
     {{- end }}

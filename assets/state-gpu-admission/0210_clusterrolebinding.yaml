@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gpu-admission-as-volume-scheduler
+subjects:
+  - kind: ServiceAccount
+    name: gpu-admission
+    namespace: "FILLED BY THE OPERATOR"
+roleRef:
+  kind: ClusterRole
+  name: system:volume-scheduler
+  apiGroup: rbac.authorization.k8s.io

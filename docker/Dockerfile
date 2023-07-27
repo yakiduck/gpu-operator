@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA_IMAGE=nvcr.io/nvidia/cuda
-ARG CUDA_VERSION=undefined
+ARG CUDA_VERSION=11.4.2
 ARG GIT_COMMIT="unknown"
 
 ARG BASE_DIST=ubi8
