@@ -1,0 +1,27 @@
+apiVersion: ecns.easystack.com/v1
+kind: GpuNodePolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: gpunodepolicy
+    app.kubernetes.io/instance: gpunodepolicy-sample
+    app.kubernetes.io/part-of: gpu-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: gpu-operator
+  name: gpunodepolicy-node-0
+  namespace: gpu-operator
+spec:
+  deviceMode: time-slicing
+  timeSlicing:
+    renameByDefault: true
+    failRequestsGreaterThanOne: true
+    resources:
+    - name: nvidia.com/gpu
+      replicas: 4
+  mig:
+    strategy: single
+    configs:
+    - devices: all
+      mig-devices:
+        "1g.5gb": 7
+  nodeSelector:
+    kubernetes.io/hostname: gpus-node-0.novalocal

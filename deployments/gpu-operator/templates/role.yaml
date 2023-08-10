@@ -81,6 +81,26 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies
+  verbs:
+  - '*'
+- apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ecns.easystack.com
+  resources:
+  - gpunodepolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - scheduling.k8s.io
   resources:
   - priorityclasses

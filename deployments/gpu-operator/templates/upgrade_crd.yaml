@@ -33,6 +33,8 @@ spec:
           command:
           - /bin/sh
           - -c
-          - kubectl apply -f /opt/gpu-operator/nvidia.com_clusterpolicies_crd.yaml;
+          - |
+            kubectl apply -f /opt/gpu-operator/nvidia.com_clusterpolicies_crd.yaml;
+            kubectl apply -f /opt/gpu-operator/ecns.easystack.com_gpunodepolicies_crd.yaml;
       restartPolicy: OnFailure
 {{- end }}
