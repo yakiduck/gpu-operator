@@ -449,5 +449,9 @@ gpuAdmission:
     - name: LOG_LEVEL
       value: "4"
   resources: {}
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      effect: "NoSchedule"
   nodeSelector:
     nvidia-device-admission-enable: enable

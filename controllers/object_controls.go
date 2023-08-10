@@ -1705,6 +1705,11 @@ func TransformGPUAdmission(obj *appsv1.Deployment, config *gpuv1.ClusterPolicySp
 	if len(config.GPUAdmission.NodeSelector) > 0 {
 		obj.Spec.Template.Spec.NodeSelector = config.GPUAdmission.NodeSelector
 	}
+
+	// set tolerations
+	if len(config.GPUAdmission.Tolerations) > 0 {
+		obj.Spec.Template.Spec.Tolerations = config.GPUAdmission.Tolerations
+	}
 	return nil
 }
 
