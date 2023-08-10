@@ -634,6 +634,9 @@ spec:
     {{- if .Values.gpuAdmission.args }}
     args: {{ toYaml .Values.gpuAdmission.args | nindent 6 }}
     {{- end }}
+    {{- if .Values.gpuAdmission.tolerations }}
+    tolerations: {{ toYaml .Values.gpuAdmission.tolerations | nindent 6 }}
+    {{- end }}
     {{- if .Values.gpuAdmission.nodeSelector }}
     nodeSelector: {{ toYaml .Values.gpuAdmission.nodeSelector | nindent 6 }}
     {{- end }}

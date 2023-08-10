@@ -427,7 +427,7 @@ gpuManager:
     - name: LOG_LEVEL
       value: "5"
     - name: EXTRA_FLAGS
-      value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock"
+      value: "--logtostderr=false --container-runtime-endpoint=/var/run/containerd/containerd.sock --cgroup-driver=systemd"
   resources: {}
 
 gpuAdmission:
@@ -443,5 +443,9 @@ gpuAdmission:
     - name: LOG_LEVEL
       value: "4"
   resources: {}
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Equal"
+      effect: "NoSchedule"
   nodeSelector:
     nvidia-device-admission-enable: enable

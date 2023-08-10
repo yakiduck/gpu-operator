@@ -1434,6 +1434,12 @@ type GPUAdmissionSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="NodeSelector Variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Optional: Variables of Tolerations
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Tolerations Variables"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // MIGStrategy indicates MIG mode
