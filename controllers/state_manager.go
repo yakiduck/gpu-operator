@@ -77,8 +77,10 @@ var gpuStateLabels = map[string]map[string]string{
 		"nvidia.com/gpu.deploy.operator-validator":    "true",
 	},
 	gpuWorkloadConfigVcuda: {
-		"nvidia.com/gpu.deploy.driver":              "true",
-		"ecns.easystack.com/gpu.deploy.gpu-manager": "true",
+		"nvidia.com/gpu.deploy.driver":                "true",
+		"nvidia.com/gpu.deploy.gpu-feature-discovery": "true",
+		"nvidia.com/gpu.deploy.operator-validator":    "true",
+		"ecns.easystack.com/gpu.deploy.gpu-manager":   "true",
 	},
 	gpuWorkloadConfigVMPassthrough: {
 		"nvidia.com/gpu.deploy.sandbox-device-plugin": "true",

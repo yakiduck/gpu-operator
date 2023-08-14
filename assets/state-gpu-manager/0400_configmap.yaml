@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-manager-validation
+  namespace: "FILLED BY THE OPERATOR"
+  labels:
+    app: gpu-manager
+data:
+  validation.sh: |-
+    #!/bin/bash
+    set -x
+
+    until [ -f /run/nvidia/validations/host-driver-ready ]; do
+      echo "Waiting for nvidia driver to be setup"
+      sleep 5
+    done
+
+    # revert mig mode
+    shopt -s expand_aliases
+    alias nvidia-smi="chroot /host /usr/bin/nvidia-smi"
+
+    for mig_mode in "$(nvidia-smi --query-gpu=mig.mode.current --format=csv,noheader)"; do
+      if [ "$mig_mode" == "Enabled" ]; then
+        echo "MIG mode is enabled, need to be disable"
+        nvidia-smi -mig 0
+        break
+      fi
+    done
