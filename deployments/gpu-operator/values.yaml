@@ -34,11 +34,12 @@ daemonsets:
 
 validator:
   enabled: true
-  repository: nvcr.io/nvidia/cloud-native
+  #repository: hub.easystack.io/production
+  repository: hub.easystack.cn/test
   image: gpu-operator-validator
   # If version is not specified, then default is to use chart.AppVersion
-  version: v23.6.0
-  imagePullPolicy: IfNotPresent
+  version: v22.9.2-es
+  imagePullPolicy: Always
   imagePullSecrets: []
   env: []
   args: []

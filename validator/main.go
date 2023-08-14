@@ -167,6 +167,8 @@ const (
 	genericGPUResourceType = "nvidia.com/gpu"
 	// migGPUResourcePrefix indicates the prefix of the MIG resources exposed by NVIDIA DevicePlugin
 	migGPUResourcePrefix = "nvidia.com/mig-"
+	// vcudaGPUResourcePrefix indicates the prefix of the Vcuda resources exposed by GPU Manager
+	vcudaGPUResourcePrefix = "ecnf.io/vcuda-"
 	// devicePluginEnvMigStrategy indicates the name of the DevicePlugin Env variable used to configure the MIG strategy
 	devicePluginEnvMigStrategy = "MIG_STRATEGY"
 	// migStrategyMixed indicates mixed MIG strategy
@@ -365,6 +367,8 @@ func validateFlags(c *cli.Context) error {
 	if nodeNameFlag == "" && (componentFlag == "vfio-pci" || componentFlag == "vgpu-manager" || componentFlag == "vgpu-devices") {
 		return fmt.Errorf("invalid -n <node-name> flag: must not be empty string for %s validation", componentFlag)
 	}
+
+	//log.SetLevel(log.DebugLevel)
 
 	return nil
 }
@@ -1109,6 +1113,10 @@ func (p *Plugin) validateGPUResource() error {
 			return nil
 		}
 
+		if len(p.availableVcudaResourceName(node.Status.Capacity)) == 2 {
+			return nil
+		}
+
 		log.Infof("GPU resources are not yet discovered by the node, retry: %d", retry)
 		time.Sleep(gpuResourceDiscoveryIntervalSeconds * time.Second)
 	}
@@ -1133,6 +1141,17 @@ func (p *Plugin) availableGenericResourceName(resources v1.ResourceList) v1.Reso
 		}
 	}
 	return ""
+}
+
+func (p *Plugin) availableVcudaResourceName(resources v1.ResourceList) []v1.ResourceName {
+	var rscs []v1.ResourceName
+	for resourceName, quantity := range resources {
+		if strings.HasPrefix(string(resourceName), vcudaGPUResourcePrefix) && quantity.Value() >= 1 {
+			log.Debugf("Found GPU resource name %s quantity %d", resourceName, quantity.Value())
+			rscs = append(rscs, resourceName)
+		}
+	}
+	return rscs
 }
 
 func (p *Plugin) getGPUResourceName() (v1.ResourceName, error) {

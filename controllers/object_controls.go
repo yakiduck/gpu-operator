@@ -1613,6 +1613,12 @@ func TransformSandboxValidator(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolic
 
 // TransformGPUManager transforms GPU Manager with required config as per ClusterPolicy
 func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
+	// update validation container
+	err := transformValidationInitContainer(obj, config)
+	if err != nil {
+		return err
+	}
+
 	// update image
 	img, err := gpuv1.ImagePath(&config.GPUManager)
 	if err != nil {
@@ -1649,9 +1655,6 @@ func TransformGPUManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec,
 			setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), env.Name, env.Value)
 		}
 	}
-
-	// set RuntimeClass for supported runtimes
-	setRuntimeClass(&obj.Spec.Template.Spec, n.runtime, config.Operator.RuntimeClass)
 
 	return nil
 }
@@ -1697,9 +1700,6 @@ func TransformGPUAdmission(obj *appsv1.Deployment, config *gpuv1.ClusterPolicySp
 			setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), env.Name, env.Value)
 		}
 	}
-
-	// set RuntimeClass for supported runtimes
-	setRuntimeClass(&obj.Spec.Template.Spec, n.runtime, config.Operator.RuntimeClass)
 
 	// set nodeSelector
 	if len(config.GPUAdmission.NodeSelector) > 0 {
