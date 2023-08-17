@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+NATIVE_ARCH ?= $(shell uname -i)
+ifeq ($(NATIVE_ARCH),x86_64)
 DOCKER_BUILD_PLATFORM_OPTIONS = --platform=linux/amd64
+else ifeq ($(NATIVE_ARCH),aarch64)
+DOCKER_BUILD_PLATFORM_OPTIONS = --platform=linux/arm64
+endif
 
 $(PUSH_TARGETS): OUT_IMAGE ?= $(IMAGE_NAME):$(IMAGE_TAG)
 $(PUSH_TARGETS): push-%:
