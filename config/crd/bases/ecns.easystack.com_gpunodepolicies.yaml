@@ -41,6 +41,7 @@ spec:
                   The driver type for configured VFs. Allowed value "netdevice", "vfio-pci".
                   Defaults to netdevice.
                 enum:
+                - default
                 - vcuda
                 - time-slicing
                 - mig
@@ -126,6 +127,13 @@ spec:
               nodes:
                 additionalProperties:
                   properties:
+                    default:
+                      properties:
+                        enabled:
+                          type: boolean
+                      required:
+                      - enabled
+                      type: object
                     mig:
                       properties:
                         devicePlugin:

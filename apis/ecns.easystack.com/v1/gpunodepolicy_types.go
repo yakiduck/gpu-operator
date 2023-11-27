@@ -28,6 +28,7 @@ import (
 type DeviceMode string
 
 const (
+	Default     DeviceMode = "default"
 	VCUDA       DeviceMode = "vcuda"
 	TimeSlicing DeviceMode = "time-slicing"
 	MIG         DeviceMode = "mig"
@@ -46,7 +47,7 @@ type GpuNodePolicySpec struct {
 	Priority int `json:"priority,omitempty" yaml:"priority,omitempty"`
 	// NicSelector selects the NICs to be configured
 	//GpuSelector GpuSelector `json:"gpuSelector,omitempty" yaml:"gpuSelector,omitempty"`
-	// +kubebuilder:validation:Enum=vcuda;time-slicing;mig
+	// +kubebuilder:validation:Enum=default;vcuda;time-slicing;mig
 	// The driver type for configured VFs. Allowed value "netdevice", "vfio-pci". Defaults to netdevice.
 	Mode DeviceMode `json:"deviceMode" yaml:"deviceMode"`
 
@@ -108,6 +109,7 @@ type GpuNodePolicyStatus struct {
 type GpuNodeStatus struct {
 	TimeSlicingMode *TimeSlicingModeStatus `json:"timeSlicing,omitempty" yaml:"timeSlicing,omitempty"`
 	MigMode         *MigModeStatus         `json:"mig,omitempty"         yaml:"mig,omitempty"`
+	DefaultMode     *DefaultModeStatus     `json:"default,omitempty"       yaml:"default,omitempty"`
 	VcudaMode       *VcudaModeStatus       `json:"vcuda,omitempty"       yaml:"vcuda,omitempty"`
 }
 
@@ -120,6 +122,10 @@ type MigModeStatus struct {
 	Enabled      bool             `json:"enabled"      yaml:"enabled"`
 	DevicePlugin ConfigSyncStatus `json:"devicePlugin" yaml:"devicePlugin"`
 	MigParted    ConfigSyncStatus `json:"migParted"    yaml:"migParted"`
+}
+
+type DefaultModeStatus struct {
+	Enabled bool `json:"enabled" yaml:"enabled"`
 }
 
 type VcudaModeStatus struct {

@@ -422,8 +422,7 @@ gpuManager:
   enabled: true
   repository: hub.easystack.io/production
   image: gpu-manager
-  version: latest
-  #version: v1.1.5-es
+  version: v1.1.6-es
   imagePullPolicy: Always
   imagePullSecrets: []
   args: []
@@ -439,8 +438,7 @@ gpuAdmission:
   replicas: 3
   repository: hub.easystack.io/production
   image: gpu-admission
-  version: latest
-  #version: v1.1.5-es
+  version: v1.1.6-es
   imagePullPolicy: Always
   imagePullSecrets: []
   args: []
@@ -449,8 +447,8 @@ gpuAdmission:
       value: "4"
   resources: {}
   tolerations:
-    - key: "node-role.kubernetes.io/control-plane"
+    - key: "node-role.kubernetes.io/master"
       operator: "Equal"
+      value: ""
       effect: "NoSchedule"
-  nodeSelector:
-    nvidia-device-admission-enable: enable
+  nodeSelector: {}
