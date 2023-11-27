@@ -195,6 +195,8 @@ func (r *GpuNodePolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// 3. set configmap
 	switch instance.Spec.Mode {
+	case esv1.Default:
+		// If default need config
 	case esv1.VCUDA:
 		// If gpu manager has config
 	case esv1.TimeSlicing:
@@ -657,7 +659,7 @@ func newGpuModeConfiguration(instance *esv1.GpuNodePolicy, log logr.Logger) *gpu
 	dpCfg := DevicePluginConfigLabelValueDefault
 	migCfg := MigConfigLabelValueAllDisabled
 
-	if cfg == gpuWorkloadConfigContainer {
+	if cfg == gpuWorkloadConfigContainer && instance.Spec.Mode != esv1.Default {
 		dpCfg = instance.GetName()
 	}
 
@@ -804,7 +806,7 @@ func setWorkloadConfig(mode esv1.DeviceMode) string {
 	switch mode {
 	case esv1.VCUDA:
 		return gpuWorkloadConfigVcuda
-	case esv1.TimeSlicing, esv1.MIG:
+	case esv1.Default, esv1.TimeSlicing, esv1.MIG:
 		return gpuWorkloadConfigContainer
 	case "":
 		return gpuWorkloadConfigNone
@@ -850,6 +852,7 @@ func UpdateGpuNodePolicyStatus(instance *esv1.GpuNodePolicy, node string, needDP
 			status.TimeSlicingMode.DevicePlugin.Sync = *needDPSync
 		}
 		status.MigMode = nil
+		status.DefaultMode = nil
 		status.VcudaMode = nil
 	case esv1.MIG:
 		if status.MigMode == nil {
@@ -870,7 +873,17 @@ func UpdateGpuNodePolicyStatus(instance *esv1.GpuNodePolicy, node string, needDP
 			status.MigMode.MigParted.Sync = *needMigSync
 		}
 		status.TimeSlicingMode = nil
+		status.DefaultMode = nil
 		status.VcudaMode = nil
+	case esv1.Default:
+		if status.DefaultMode == nil {
+			status.DefaultMode = &esv1.DefaultModeStatus{
+				Enabled: true,
+			}
+		}
+		status.TimeSlicingMode = nil
+		status.VcudaMode = nil
+		status.MigMode = nil
 	case esv1.VCUDA:
 		if status.VcudaMode == nil {
 			status.VcudaMode = &esv1.VcudaModeStatus{
@@ -878,6 +891,7 @@ func UpdateGpuNodePolicyStatus(instance *esv1.GpuNodePolicy, node string, needDP
 			}
 		}
 		status.TimeSlicingMode = nil
+		status.DefaultMode = nil
 		status.MigMode = nil
 	}
 	instance.Status.Nodes[node] = status
