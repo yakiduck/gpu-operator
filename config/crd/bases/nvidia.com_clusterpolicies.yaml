@@ -2217,6 +2217,9 @@ spec:
                         description: Version represents image tag(version)
                         type: string
                     type: object
+                  kubeletRoot:
+                    default: /var/lib/kubelet
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
