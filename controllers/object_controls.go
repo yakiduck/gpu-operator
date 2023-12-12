@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"path/filepath"
 
@@ -45,6 +47,8 @@ const (
 	DefaultDockerConfigFile = "/etc/docker/daemon.json"
 	// DefaultDockerSocketFile indicates default docker socket file
 	DefaultDockerSocketFile = "/var/run/docker.sock"
+	// DefaultKubeletRootDir indicates default kubelet root directory
+	DefaultKubeletRootDir = "/var/lib/kubelet"
 	// TrustedCAConfigMapName indicates configmap with custom user CA injected
 	TrustedCAConfigMapName = "gpu-operator-trusted-ca"
 	// TrustedCABundleFileName indicates custom user ca certificate filename
@@ -1272,6 +1276,8 @@ func TransformDCGMExporter(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpe
 		setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), "DCGM_EXPORTER_COLLECTORS", MetricsConfigMountPath)
 	}
 
+	setKubeletRoot(&obj.Spec.Template.Spec, "pod-gpu-resources", &config.Operator)
+
 	release, err := parseOSRelease()
 	if err != nil {
 		return fmt.Errorf("ERROR: failed to get os-release: %s", err)
@@ -1967,6 +1973,30 @@ func setRuntimeClass(podSpec *corev1.PodSpec, runtime gpuv1.Runtime, runtimeClas
 	if runtime == gpuv1.Containerd && runtimeClass != "" {
 		podSpec.RuntimeClassName = &runtimeClass
 	}
+}
+
+func setKubeletRoot(podSpec *corev1.PodSpec, volumeName string, operatorSpec *gpuv1.OperatorSpec) {
+	for i, volume := range podSpec.Volumes {
+		if volume.Name == volumeName {
+			kPath, err := generatePath(volume.HostPath.Path, operatorSpec)
+			if err != nil {
+				kPath = filepath.Join(DefaultKubeletRootDir, filepath.Base(volume.HostPath.Path))
+			}
+			podSpec.Volumes[i].HostPath.Path = kPath
+		}
+	}
+}
+
+func generatePath(path string, operatorSpec *gpuv1.OperatorSpec) (string, error) {
+	buf := &bytes.Buffer{}
+	tmpl, err := template.New("template").Parse(path)
+	if err != nil {
+		return "", fmt.Errorf("error parsing template: %v", err)
+	}
+	if err := tmpl.Execute(buf, operatorSpec); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // applies MIG related configuration env to container spec

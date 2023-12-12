@@ -114,7 +114,9 @@ type OperatorSpec struct {
 	// +kubebuilder:default=docker
 	DefaultRuntime Runtime `json:"defaultRuntime"`
 	// +kubebuilder:default=nvidia
-	RuntimeClass  string            `json:"runtimeClass,omitempty"`
+	RuntimeClass string `json:"runtimeClass,omitempty"`
+	// +kubebuilder:default=/var/lib/kubelet
+	KubeletRoot   string            `json:"kubeletRoot,omitempty"`
 	InitContainer InitContainerSpec `json:"initContainer,omitempty"`
 
 	// Optional: Map of string keys and values that can be used to organize and categorize

@@ -919,3 +919,56 @@ func TestSortKeyToPathList(t *testing.T) {
 		assert.Equal(t, expectedList[i].Path, ktp.Path)
 	}
 }
+
+func TestSetKubeletRoot(t *testing.T) {
+	volumeName := "test-pod-gpu-resources"
+
+	podSpec1 := &corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "{{ .KubeletRoot }}/pod-resources",
+					},
+				},
+			},
+		},
+	}
+	podSpec2 := &corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "{{ .Kubeletroot }}/pod-resources",
+					},
+				},
+			},
+		},
+	}
+	podSpec3 := &corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: volumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/kubelet/pod-resources",
+					},
+				},
+			},
+		},
+	}
+	operatorSpec := &gpuv1.OperatorSpec{
+		RuntimeClass: DefaultRuntimeClass,
+		KubeletRoot:  "/kubelet-test",
+	}
+
+	setKubeletRoot(podSpec1, volumeName, operatorSpec)
+	setKubeletRoot(podSpec2, volumeName, operatorSpec)
+	setKubeletRoot(podSpec3, volumeName, operatorSpec)
+
+	assert.Equal(t, podSpec1.Volumes[0].HostPath.Path, "/kubelet-test/pod-resources")
+	assert.Equal(t, podSpec2.Volumes[0].HostPath.Path, "/var/lib/kubelet/pod-resources")
+	assert.Equal(t, podSpec3.Volumes[0].HostPath.Path, "/kubelet/pod-resources")
+}
