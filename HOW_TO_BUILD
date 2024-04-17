@@ -1,0 +1,1 @@
+REGISTRY=${registry} IMAGE_TAG=v23.9.2-es VERSION=v23.9.2-es make build-ubi8
