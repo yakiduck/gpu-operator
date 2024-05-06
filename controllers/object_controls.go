@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"path/filepath"
 
@@ -50,6 +52,8 @@ const (
 	DefaultDockerConfigFile = "/etc/docker/daemon.json"
 	// DefaultDockerSocketFile indicates default docker socket file
 	DefaultDockerSocketFile = "/var/run/docker.sock"
+	// DefaultKubeletRootDir indicates default kubelet root directory
+	DefaultKubeletRootDir = "/var/lib/kubelet"
 	// DefaultCRIOConfigFile indicates default config file path for cri-o.
 	// Note, config files in the drop-in directory, /etc/crio/crio.conf.d,
 	// have a higher priority than the default /etc/crio/crio.conf file.
@@ -90,10 +94,16 @@ const (
 	ValidatorImagePullSecretsEnvName = "VALIDATOR_IMAGE_PULL_SECRETS"
 	// ValidatorRuntimeClassEnvName indicates env name of runtime class to be applied to validator pods
 	ValidatorRuntimeClassEnvName = "VALIDATOR_RUNTIME_CLASS"
+	// DevicePluginDefaultConfigMapName indicates name of ConfigMap containing default device plugin config
+	DevicePluginDefaultConfigMapName = "nvidia-plugin-configs"
+	// DevicePluginDefaultConfig indicates name of device plugin default config
+	DevicePluginDefaultConfig = "default"
 	// MigStrategyEnvName indicates env name for passing MIG strategy
 	MigStrategyEnvName = "MIG_STRATEGY"
 	// MigPartedDefaultConfigMapName indicates name of ConfigMap containing default mig-parted config
 	MigPartedDefaultConfigMapName = "default-mig-parted-config"
+	// MigPartedDefaultConfig indicates name of MIG default config
+	MigPartedDefaultConfig = "all-disabled"
 	// MigDefaultGPUClientsConfigMapName indicates name of ConfigMap containing default gpu-clients
 	MigDefaultGPUClientsConfigMapName = "default-gpu-clients"
 	// DCGMRemoteEngineEnvName indicates env name to specify remote DCGM host engine ip:port
@@ -251,6 +261,13 @@ var SubscriptionPathMap = map[string](MountPathToVolumeSource){
 			},
 		},
 	},
+}
+
+type empty struct{}
+
+var ConfigMapNotUpdate = map[string]empty{
+	DevicePluginDefaultConfigMapName: {},
+	MigPartedDefaultConfigMapName:    {},
 }
 
 type controlFunc []func(n ClusterPolicyController) (gpuv1.State, error)
@@ -532,6 +549,11 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 			return gpuv1.NotReady, err
 		}
 
+		if _, ok := ConfigMapNotUpdate[obj.Name]; ok {
+			logger.Info("Resource does not need to be updated")
+			return gpuv1.Ready, nil
+		}
+
 		logger.Info("Found Resource, updating...")
 		err = n.rec.Client.Update(ctx, obj)
 		if err != nil {
@@ -686,6 +708,8 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		return nil
 	}
 
+	setDevicePluginDefaultConfig(&n.singleton.Spec)
+
 	// apply common Daemonset configuration that is applicable to all
 	err := applyCommonDaemonsetConfig(obj, &n.singleton.Spec)
 	if err != nil {
@@ -730,6 +754,15 @@ func applyCommonDaemonsetMetadata(obj *appsv1.DaemonSet, dsSpec *gpuv1.Daemonset
 		}
 		for annoKey, annoVal := range dsSpec.Annotations {
 			obj.Spec.Template.ObjectMeta.Annotations[annoKey] = annoVal
+		}
+	}
+}
+
+func setDevicePluginDefaultConfig(config *gpuv1.ClusterPolicySpec) {
+	if config.DevicePlugin.Config == nil {
+		config.DevicePlugin.Config = &gpuv1.DevicePluginConfig{
+			Name:    DevicePluginDefaultConfigMapName,
+			Default: DevicePluginDefaultConfig,
 		}
 	}
 }
@@ -1386,6 +1419,8 @@ func TransformDCGMExporter(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpe
 
 		setContainerEnv(&(obj.Spec.Template.Spec.Containers[0]), "DCGM_EXPORTER_COLLECTORS", MetricsConfigMountPath)
 	}
+
+	setKubeletRoot(&obj.Spec.Template.Spec, "pod-gpu-resources", &config.Operator)
 
 	release, err := parseOSRelease()
 	if err != nil {
@@ -2217,6 +2252,30 @@ func setContainerProbe(container *corev1.Container, probe *gpuv1.ContainerProbeS
 	if probe.PeriodSeconds != 0 {
 		containerProbe.PeriodSeconds = probe.PeriodSeconds
 	}
+}
+
+func setKubeletRoot(podSpec *corev1.PodSpec, volumeName string, operatorSpec *gpuv1.OperatorSpec) {
+	for i, volume := range podSpec.Volumes {
+		if volume.Name == volumeName {
+			kPath, err := generatePath(volume.HostPath.Path, operatorSpec)
+			if err != nil {
+				kPath = filepath.Join(DefaultKubeletRootDir, filepath.Base(volume.HostPath.Path))
+			}
+			podSpec.Volumes[i].HostPath.Path = kPath
+		}
+	}
+}
+
+func generatePath(path string, operatorSpec *gpuv1.OperatorSpec) (string, error) {
+	buf := &bytes.Buffer{}
+	tmpl, err := template.New("template").Parse(path)
+	if err != nil {
+		return "", fmt.Errorf("error parsing template: %v", err)
+	}
+	if err := tmpl.Execute(buf, operatorSpec); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // applies MIG related configuration env to container spec

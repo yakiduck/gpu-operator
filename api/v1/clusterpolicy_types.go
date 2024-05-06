@@ -121,7 +121,9 @@ type OperatorSpec struct {
 	// +kubebuilder:default=docker
 	DefaultRuntime Runtime `json:"defaultRuntime"`
 	// +kubebuilder:default=nvidia
-	RuntimeClass  string            `json:"runtimeClass,omitempty"`
+	RuntimeClass string `json:"runtimeClass,omitempty"`
+	// +kubebuilder:default=/var/lib/kubelet
+	KubeletRoot   string            `json:"kubeletRoot,omitempty"`
 	InitContainer InitContainerSpec `json:"initContainer,omitempty"`
 
 	// Optional: Map of string keys and values that can be used to organize and categorize
@@ -171,8 +173,8 @@ type SandboxWorkloadsSpec struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// DefaultWorkload indicates the default GPU workload type to configure
 	// worker nodes in the cluster for
-	// +kubebuilder:validation:Enum=container;vm-passthrough;vm-vgpu
-	// +kubebuilder:default=container
+	// +kubebuilder:validation:Enum=none;container;vm-passthrough;vm-vgpu
+	// +kubebuilder:default=none
 	DefaultWorkload string `json:"defaultWorkload,omitempty"`
 }
 
