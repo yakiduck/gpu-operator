@@ -9,3 +9,9 @@ rules:
   - nodes
   verbs:
   - '*'
+- apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeaturerules
+  verbs:
+  - '*'

@@ -20,3 +20,9 @@ rules:
   - list
   - patch
   - watch
+- apiGroups:
+  - nfd.k8s-sigs.io
+  resources:
+  - nodefeaturerules
+  verbs:
+  - '*'
