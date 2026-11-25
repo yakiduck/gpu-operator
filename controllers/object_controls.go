@@ -109,6 +109,9 @@ const (
 	ValidatorRuntimeClassEnvName = "VALIDATOR_RUNTIME_CLASS"
 	// MigStrategyEnvName indicates env name for passing MIG strategy
 	MigStrategyEnvName = "MIG_STRATEGY"
+	// DevicePluginDefaultConfigMapName contains the editable default device plugin configuration.
+	DevicePluginDefaultConfigMapName = "nvidia-plugin-configs"
+	DevicePluginDefaultConfig        = "default"
 	// MigPartedDefaultConfigMapName indicates name of ConfigMap containing default mig-parted config
 	MigPartedDefaultConfigMapName = "default-mig-parted-config"
 	// MigDefaultGPUClientsConfigMapName indicates name of ConfigMap containing default gpu-clients
@@ -605,6 +608,12 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 		return gpuv1.Disabled, nil
 	}
 
+	// A user-supplied plugin ConfigMap replaces the operator's default.
+	if obj.Name == DevicePluginDefaultConfigMapName && isCustomPluginConfigSet(config.DevicePlugin.Config) &&
+		config.DevicePlugin.Config.Name != DevicePluginDefaultConfigMapName {
+		return gpuv1.Ready, nil
+	}
+
 	// avoid creating default 'mig-parted-config' ConfigMap if custom one is provided
 	if obj.Name == MigPartedDefaultConfigMapName {
 		if name, isCustom := gpuv1.GetConfigMapName(config.MIGManager.Config, MigPartedDefaultConfigMapName); isCustom {
@@ -637,6 +646,12 @@ func createConfigMap(n ClusterPolicyController, configMapIdx int) (gpuv1.State, 
 		if !apierrors.IsAlreadyExists(err) {
 			logger.Info("Couldn't create", "Error", err)
 			return gpuv1.NotReady, err
+		}
+
+		// These defaults are editable by administrators; reconciliation must not
+		// overwrite per-node device plugin and MIG configurations they add.
+		if obj.Name == DevicePluginDefaultConfigMapName || obj.Name == MigPartedDefaultConfigMapName {
+			return gpuv1.Ready, nil
 		}
 
 		logger.Info("Found Resource, updating...")
@@ -766,6 +781,8 @@ func preProcessDaemonSet(obj *appsv1.DaemonSet, n ClusterPolicyController) error
 		return nil
 	}
 
+	setDevicePluginDefaultConfig(&n.singleton.Spec)
+
 	// apply common Daemonset configuration that is applicable to all
 	err := applyCommonDaemonsetConfig(obj, &n.singleton.Spec)
 	if err != nil {
@@ -842,6 +859,16 @@ func applyCommonDaemonsetLabel(obj *appsv1.DaemonSet, labelKey, labelValue strin
 	} else if hasPodLabel && podValue != labelValue {
 		logger.Info("Skipping custom pod label override for immutable DaemonSet selectors",
 			"label", labelKey, "value", labelValue)
+	}
+}
+
+// setDevicePluginDefaultConfig also handles Helm's explicit config with an empty name.
+func setDevicePluginDefaultConfig(config *gpuv1.ClusterPolicySpec) {
+	if !isCustomPluginConfigSet(config.DevicePlugin.Config) {
+		config.DevicePlugin.Config = &gpuv1.DevicePluginConfig{
+			Name:    DevicePluginDefaultConfigMapName,
+			Default: DevicePluginDefaultConfig,
+		}
 	}
 }
 
@@ -2170,12 +2197,6 @@ func TransformMIGManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec,
 
 // TransformVFIOManager transforms VFIO-PCI Manager daemonset with required config as per ClusterPolicy
 func TransformVFIOManager(obj *appsv1.DaemonSet, config *gpuv1.ClusterPolicySpec, n ClusterPolicyController) error {
-	// update k8s-driver-manager initContainer
-	err := transformDriverManagerInitContainer(obj, &config.VFIOManager.DriverManager, nil, config.VFIOManager.Resources)
-	if err != nil {
-		return fmt.Errorf("failed to transform k8s-driver-manager initContainer for VFIO Manager: %v", err)
-	}
-
 	// update image
 	image, err := gpuv1.ImagePath(&config.VFIOManager)
 	if err != nil {

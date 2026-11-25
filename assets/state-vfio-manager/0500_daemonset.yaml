@@ -22,48 +22,26 @@ spec:
         nvidia.com/gpu.deploy.vfio-manager: "true"
       priorityClassName: system-node-critical
       serviceAccountName: nvidia-vfio-manager
-      initContainers:
-        - name: k8s-driver-manager
-          image: "FILLED BY THE OPERATOR"
-          imagePullPolicy: IfNotPresent
-          command: ["driver-manager"]
-          args: ["uninstall_driver"]
-          env:
-          - name: NODE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          # always use runc for driver containers
-          - name: NVIDIA_VISIBLE_DEVICES
-            value: void
-          - name: ENABLE_GPU_POD_EVICTION
-            value: "false"
-          - name: ENABLE_AUTO_DRAIN
-            value: "false"
-          - name: OPERATOR_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          securityContext:
-            privileged: true
-          volumeMounts:
-            - name: run-nvidia
-              mountPath: /run/nvidia
-              mountPropagation: Bidirectional
-            - name: host-root
-              mountPath: /host
-              readOnly: true
-              mountPropagation: HostToContainer
-            - name: host-sys
-              mountPath: /sys
       containers:
         - name: nvidia-vfio-manager
           image: "FILLED BY THE OPERATOR"
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
-            - vfio-manage bind --all && while true; do sleep 86400; done
+            - driver-manager switch_driver && while true; do sleep 86400; done
           env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: void
+            - name: ENABLE_GPU_POD_EVICTION
+              value: "true"
+            - name: OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: HOST_ROOT
               value: "/host"
           resources:
@@ -73,6 +51,9 @@ spec:
               cpu: 100m
               memory: 200Mi
           volumeMounts:
+          - name: run-nvidia
+            mountPath: /run/nvidia
+            mountPropagation: Bidirectional
           - name: host-sys
             mountPath: /sys
           - name: host-lib-modules
@@ -87,7 +68,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "vfio-manage unbind --all"]
+                command: ["/bin/sh", "-c", "driver-manager switch_driver --restore > /proc/1/fd/1"]
       terminationGracePeriodSeconds: 30
       volumes:
         - name: host-sys

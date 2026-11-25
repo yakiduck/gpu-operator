@@ -1,0 +1,72 @@
+# 在项目根目录执行。以下仓库以 hub.easystack.cn/multiarch 为例，按需替换。
+# 镜像名为 ${REGISTRY}/gpu-operator:${VERSION}。
+# VERSION 使用当前分支名；如通过 detached HEAD 检出代码，请手动指定版本。
+# 构建需要 Make、Git、Docker 和 buildx，并能访问基础镜像及 NVIDIA 软件源。
+# Go 编译在镜像内完成；宿主机未安装 Go 时，Makefile 解析 GOBIN 可能输出
+# “make: go: Command not found”，这条提示本身不会终止 build-image。
+
+# 1. 构建单架构镜像并保存在宿主机 Docker 中（默认 linux/amd64，不推送）。
+REGISTRY=hub.easystack.cn/multiarch VERSION=$(git branch --show-current) \
+  make build-image
+
+# 仅构建 ARM64：替换默认平台，不会额外包含 amd64。
+# 在 ARM64 主机上构建，或确保构建环境已配置 ARM64 仿真。
+REGISTRY=hub.easystack.cn/multiarch VERSION=$(git branch --show-current) \
+  DOCKER_BUILD_PLATFORM_OPTIONS=--platform=linux/arm64 make build-image
+
+# 2. 检查双架构 builder。
+# docker buildx ls 中应存在使用 docker-container driver 的 builder，
+# 且 Platforms 同时包含 linux/amd64 和 linux/arm64。
+# root@172.18.0.231 已有名为 multiarch 的 builder，可直接复用。
+docker buildx ls
+docker buildx inspect multiarch
+
+# 仅当 multiarch 不存在时创建；已有时不要重复创建。
+# docker buildx create --name multiarch --driver docker-container --use
+# docker buildx inspect multiarch --bootstrap
+# 创建 builder 不等于安装跨架构仿真；若缺少目标平台，需要先配置
+# 原生构建节点或 QEMU/binfmt，再确认 Platforms 列表。
+
+# 3. 构建并推送 amd64 + arm64 双架构镜像。
+# docker build 默认仍可能使用 docker driver，不能只依赖 buildx ls 中的星号。
+# 必须用 DOCKER="docker buildx" 调用 buildx build，并显式选择 builder。
+docker login hub.easystack.cn
+REGISTRY=hub.easystack.cn/multiarch VERSION=$(git branch --show-current) \
+  BUILDX_BUILDER=multiarch DOCKER="docker buildx" \
+  BUILD_MULTI_ARCH_IMAGES=true PUSH_ON_BUILD=true make build-image
+
+# BUILD_MULTI_ARCH_IMAGES=true 默认指定 linux/amd64,linux/arm64。
+# 若额外设置 DOCKER_BUILD_PLATFORM_OPTIONS，其值会覆盖平台列表，不会追加。
+# 例如 DOCKER_BUILD_PLATFORM_OPTIONS=--platform=linux/arm64 最终仍只有 ARM64。
+
+# 推送完成后检查仓库中的镜像清单，应包含 linux/amd64 和 linux/arm64。
+docker buildx imagetools inspect hub.easystack.cn/multiarch/gpu-operator:$(git branch --show-current)
+
+# 4. 只验证双架构构建，不推送。
+# PUSH_ON_BUILD 默认是 false；这里显式写出以免继承环境中的 true。
+# Makefile 此时使用 --output=type=image,push=false：结果留在 builder 内部，
+# 不推送到仓库，也不自动加载到宿主机 docker images 中。
+REGISTRY=hub.easystack.cn/multiarch VERSION=$(git branch --show-current) \
+  BUILDX_BUILDER=multiarch DOCKER="docker buildx" \
+  BUILD_MULTI_ARCH_IMAGES=true PUSH_ON_BUILD=false make build-image
+
+# 5. 使用容器 builder 构建单架构镜像并加载到宿主机 Docker。
+# 覆盖输出为 type=docker（相当于 --load），不要同时设置 PUSH_ON_BUILD=true。
+# 此方式仅适用于单架构；不要用它加载 amd64 + arm64 双架构清单。
+REGISTRY=hub.easystack.cn/multiarch VERSION=$(git branch --show-current) \
+  BUILDX_BUILDER=multiarch DOCKER="docker buildx" \
+  BUILD_MULTI_ARCH_IMAGES=false \
+  DOCKER_BUILD_PLATFORM_OPTIONS=--platform=linux/arm64 \
+  DOCKER_BUILD_OPTIONS="--output=type=docker --provenance=false --sbom=false" \
+  make build-image
+
+# 常见错误：
+# “Multiple platforms feature is currently not supported for docker driver”
+# 表示实际使用了 docker driver；按第 3 节显式调用 buildx 并选择 multiarch。
+# “exec format error”通常表示目标架构无法执行，需检查原生节点或仿真配置。
+
+# 部署约定：
+# 默认 workload 为 none。为 GPU 节点设置 nvidia.com/gpu.workload.config
+# （container、vm-passthrough 或 vm-vgpu）后启用对应组件。
+# VFIO 需要支持 switch_driver 和 switch_driver --restore 的 EasyStack
+# driver-manager 镜像，请配置 vfioManager.repository/image/version。

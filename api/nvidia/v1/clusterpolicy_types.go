@@ -268,8 +268,8 @@ type SandboxWorkloadsSpec struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// DefaultWorkload indicates the default GPU workload type to configure
 	// worker nodes in the cluster for
-	// +kubebuilder:validation:Enum=container;vm-passthrough;vm-vgpu
-	// +kubebuilder:default=container
+	// +kubebuilder:validation:Enum=none;container;vm-passthrough;vm-vgpu
+	// +kubebuilder:default=none
 	DefaultWorkload string `json:"defaultWorkload,omitempty"`
 	// Mode indicates the sandbox mode. Accepted values are "kubevirt"
 	// and "kata". The default value is "kubevirt".

@@ -67,6 +67,7 @@ const (
 	//     --> ClusterServiceVersion.metadata.annotations.operatorframework.io/suggested-namespace
 	ocpSuggestedNamespace              = "nvidia-gpu-operator"
 	gpuWorkloadConfigLabelKey          = "nvidia.com/gpu.workload.config"
+	gpuWorkloadConfigNone              = "none"
 	gpuWorkloadConfigContainer         = "container"
 	gpuWorkloadConfigVMPassthrough     = "vm-passthrough"
 	gpuWorkloadConfigVMVgpu            = "vm-vgpu"
@@ -91,11 +92,15 @@ const (
 )
 
 var (
-	defaultGPUWorkloadConfig = gpuWorkloadConfigContainer
+	defaultGPUWorkloadConfig = gpuWorkloadConfigNone
 	podSecurityModes         = []string{"enforce", "audit", "warn"}
 )
 
 var gpuStateLabels = map[string]map[string]string{
+	// No deploy labels are needed for an unassigned GPU. Do not set
+	// gpu.deploy.operands=false here: that is an administrator-owned override
+	// which would otherwise prevent switching back to an active workload.
+	gpuWorkloadConfigNone: {},
 	gpuWorkloadConfigContainer: {
 		driverDeployLabelKey:                         "true",
 		gfdDeployLabelKey:                            "true",
@@ -385,18 +390,19 @@ func isValidWorkloadConfig(workloadConfig string) bool {
 
 // getWorkloadConfig returns the GPU workload configured for the node.
 // If an error occurs when searching for the workload config,
-// return defaultGPUWorkloadConfig.
-func getWorkloadConfig(labels map[string]string, sandboxEnabled bool) (string, error) {
-	if !sandboxEnabled {
-		return gpuWorkloadConfigContainer, nil
+// return the policy default (none if unset or invalid).
+func getWorkloadConfig(labels map[string]string, defaultWorkload string) (string, error) {
+	if !isValidWorkloadConfig(defaultWorkload) {
+		defaultWorkload = gpuWorkloadConfigNone
 	}
+	// Honor explicit workload labels even when sandbox operands are disabled.
 	if workloadConfig, ok := labels[gpuWorkloadConfigLabelKey]; ok {
 		if isValidWorkloadConfig(workloadConfig) {
 			return workloadConfig, nil
 		}
-		return defaultGPUWorkloadConfig, fmt.Errorf("invalid GPU workload config: %v", workloadConfig)
+		return defaultWorkload, fmt.Errorf("invalid GPU workload config: %v", workloadConfig)
 	}
-	return defaultGPUWorkloadConfig, fmt.Errorf("no GPU workload config found")
+	return defaultWorkload, fmt.Errorf("no GPU workload config found")
 }
 
 // getEffectiveStateLabels returns the state labels to apply for the given workload config and sandbox mode.
@@ -818,18 +824,14 @@ func (n *ClusterPolicyController) init(ctx context.Context, reconciler *ClusterP
 		addState(n, "/opt/gpu-operator/state-cc-manager")
 	}
 
-	if clusterPolicy.Spec.SandboxWorkloads.IsEnabled() {
-		n.sandboxEnabled = true
-		// defaultGPUWorkloadConfig is container, unless
-		// user overrides in ClusterPolicy with a valid GPU
-		// workload configuration
-		defaultWorkload := clusterPolicy.Spec.SandboxWorkloads.DefaultWorkload
-		if isValidWorkloadConfig(defaultWorkload) {
-			n.logger.Info("Default GPU workload is overridden in ClusterPolicy", "DefaultWorkload", defaultWorkload)
-			defaultGPUWorkloadConfig = defaultWorkload
-		}
-	} else {
-		n.sandboxEnabled = false
+	// Resolve the default on every policy reconcile, including when sandbox
+	// operands are disabled, so updates cannot retain a previous policy's default.
+	n.sandboxEnabled = clusterPolicy.Spec.SandboxWorkloads.IsEnabled()
+	defaultGPUWorkloadConfig = gpuWorkloadConfigNone
+	defaultWorkload := clusterPolicy.Spec.SandboxWorkloads.DefaultWorkload
+	if isValidWorkloadConfig(defaultWorkload) {
+		n.logger.Info("Default GPU workload is overridden in ClusterPolicy", "DefaultWorkload", defaultWorkload)
+		defaultGPUWorkloadConfig = defaultWorkload
 	}
 	n.logger.Info("Sandbox workloads", "Enabled", n.sandboxEnabled, "DefaultWorkload", defaultGPUWorkloadConfig)
 

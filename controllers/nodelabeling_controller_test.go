@@ -124,6 +124,7 @@ func TestNodeLabelingReconcileDoesNotDeferDependentOperationsForStateLabelChange
 	clusterPolicy := &gpuv1.ClusterPolicy{
 		ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"},
 		Spec: gpuv1.ClusterPolicySpec{
+			SandboxWorkloads: gpuv1.SandboxWorkloadsSpec{DefaultWorkload: gpuWorkloadConfigContainer},
 			Driver: gpuv1.DriverSpec{
 				UseNvidiaDriverCRD: ptr.To(true),
 			},
@@ -688,6 +689,10 @@ func TestUpdateGPUStateLabels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			// These cases exercise active operands with an explicit container default.
+			if tc.clusterPolicy != nil && tc.clusterPolicy.Spec.SandboxWorkloads.DefaultWorkload == "" {
+				tc.clusterPolicy.Spec.SandboxWorkloads.DefaultWorkload = gpuWorkloadConfigContainer
+			}
 			nlc := &nodeLabelingController{
 				clusterPolicy: tc.clusterPolicy,
 				logger:        logr.Discard(),
@@ -701,7 +706,7 @@ func TestUpdateGPUStateLabels(t *testing.T) {
 }
 
 func TestUpdateGPUStateLabelsDispatch(t *testing.T) {
-	clusterPolicy := &gpuv1.ClusterPolicy{}
+	clusterPolicy := &gpuv1.ClusterPolicy{Spec: gpuv1.ClusterPolicySpec{SandboxWorkloads: gpuv1.SandboxWorkloadsSpec{DefaultWorkload: gpuWorkloadConfigContainer}}}
 	gpuCluster := &nvidiav1alpha1.GPUCluster{}
 
 	tests := []struct {
@@ -747,7 +752,7 @@ func TestUpdateGPUStateLabelsDispatch(t *testing.T) {
 }
 
 func TestUpdateGPUStateLabelsModeSweep(t *testing.T) {
-	clusterPolicy := &gpuv1.ClusterPolicy{}
+	clusterPolicy := &gpuv1.ClusterPolicy{Spec: gpuv1.ClusterPolicySpec{SandboxWorkloads: gpuv1.SandboxWorkloadsSpec{DefaultWorkload: gpuWorkloadConfigContainer}}}
 	gpuCluster := &nvidiav1alpha1.GPUCluster{}
 	gpuBase := map[string]string{commonGPULabelKey: commonGPULabelValue}
 
@@ -1343,7 +1348,7 @@ func TestReconcileGPUClusterNodeLabels(t *testing.T) {
 	})
 
 	t.Run("ClusterPolicy present and no GPUCluster labels the GPU node with device-plugin stack", func(t *testing.T) {
-		cp := &gpuv1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"}}
+		cp := &gpuv1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"}, Spec: gpuv1.ClusterPolicySpec{SandboxWorkloads: gpuv1.SandboxWorkloadsSpec{DefaultWorkload: gpuWorkloadConfigContainer}}}
 		r, c := newReconciler(cp, gpuNode())
 
 		_, err := r.Reconcile(context.Background(), reconcile.Request{})
@@ -1369,7 +1374,7 @@ func TestReconcileGPUClusterNodeLabels(t *testing.T) {
 	})
 
 	t.Run("both CRs present returns an error", func(t *testing.T) {
-		cp := &gpuv1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"}}
+		cp := &gpuv1.ClusterPolicy{ObjectMeta: metav1.ObjectMeta{Name: "cluster-policy"}, Spec: gpuv1.ClusterPolicySpec{SandboxWorkloads: gpuv1.SandboxWorkloadsSpec{DefaultWorkload: gpuWorkloadConfigContainer}}}
 		gc := &nvidiav1alpha1.GPUCluster{ObjectMeta: metav1.ObjectMeta{Name: "config"}}
 		r, _ := newReconciler(cp, gc, gpuNode())
 

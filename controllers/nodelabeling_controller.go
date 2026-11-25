@@ -113,8 +113,8 @@ func (r nodeLabelUpdateReasons) needsUpdate() bool {
 
 // getNodeLabelUpdateReasons collects changes that can affect GPU labels or driver pool membership.
 func (r *NodeLabelingReconciler) getNodeLabelUpdateReasons(ctx context.Context, nodeName string, oldLabels, newLabels map[string]string) (nodeLabelUpdateReasons, error) {
-	oldGPUWorkloadConfig, _ := getWorkloadConfig(oldLabels, true)
-	newGPUWorkloadConfig, _ := getWorkloadConfig(newLabels, true)
+	oldGPUWorkloadConfig, _ := getWorkloadConfig(oldLabels, gpuWorkloadConfigNone)
+	newGPUWorkloadConfig, _ := getWorkloadConfig(newLabels, gpuWorkloadConfigNone)
 
 	reasons := nodeLabelUpdateReasons{
 		gpuCommonLabelMissing:        hasGPULabels(newLabels) && !hasCommonGPULabel(newLabels),
@@ -332,15 +332,17 @@ func (nlc *nodeLabelingController) updateGPUStateLabels(ctx context.Context, lab
 	cp := nlc.clusterPolicy
 	sandboxEnabled := cp != nil && cp.Spec.SandboxWorkloads.IsEnabled()
 	sandboxMode := ""
+	defaultWorkload := gpuWorkloadConfigNone
 	if cp != nil {
 		sandboxMode = cp.Spec.SandboxWorkloads.Mode
+		defaultWorkload = cp.Spec.SandboxWorkloads.DefaultWorkload
 	}
 
-	config, err := getWorkloadConfig(labels, sandboxEnabled)
+	config, err := getWorkloadConfig(labels, defaultWorkload)
 	if err != nil {
 		nlc.logger.Info("WARNING: failed to get GPU workload config for node; using default",
 			"NodeName", nodeName, "SandboxEnabled", sandboxEnabled,
-			"Error", err, "defaultGPUWorkloadConfig", defaultGPUWorkloadConfig)
+			"Error", err, "defaultGPUWorkloadConfig", config)
 	}
 	gpuWorkloadConfig := &gpuWorkloadConfiguration{
 		config:      config,

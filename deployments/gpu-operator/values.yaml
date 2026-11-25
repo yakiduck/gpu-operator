@@ -18,7 +18,8 @@ cdi:
 
 sandboxWorkloads:
   enabled: false
-  defaultWorkload: "container"
+  # GPU nodes remain unassigned until nvidia.com/gpu.workload.config is set.
+  defaultWorkload: "none"
   # Sandbox mode: "kubevirt" (default) or "kata". When "kata", the Kata device plugin is deployed on vm-passthrough nodes.
   mode: "kubevirt"
 
@@ -500,6 +501,8 @@ vgpuDeviceManager:
 
 vfioManager:
   enabled: true
+  # Configure an EasyStack driver-manager image supporting switch_driver and
+  # switch_driver --restore before enabling sandbox workloads.
   repository: nvcr.io/nvidia/cloud-native
   image: k8s-driver-manager
   version: v0.12.1

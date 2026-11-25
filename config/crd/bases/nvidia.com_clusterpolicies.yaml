@@ -2232,11 +2232,12 @@ spec:
                   workloads (i.e. Virtual Machines)
                 properties:
                   defaultWorkload:
-                    default: container
+                    default: none
                     description: |-
                       DefaultWorkload indicates the default GPU workload type to configure
                       worker nodes in the cluster for
                     enum:
+                    - none
                     - container
                     - vm-passthrough
                     - vm-vgpu

@@ -375,8 +375,8 @@ func addWatchNewGPUNode(r *ClusterPolicyReconciler, c controller.Controller, mgr
 			gpuCommonLabelAdded := !hasCommonGPULabel(oldLabels) && hasCommonGPULabel(newLabels)
 			commonOperandsLabelChanged := hasOperandsDisabled(oldLabels) != hasOperandsDisabled(newLabels)
 
-			oldGPUWorkloadConfig, _ := getWorkloadConfig(oldLabels, true)
-			newGPUWorkloadConfig, _ := getWorkloadConfig(newLabels, true)
+			oldGPUWorkloadConfig, _ := getWorkloadConfig(oldLabels, gpuWorkloadConfigNone)
+			newGPUWorkloadConfig, _ := getWorkloadConfig(newLabels, gpuWorkloadConfigNone)
 			gpuWorkloadConfigLabelChanged := oldGPUWorkloadConfig != newGPUWorkloadConfig
 
 			oldOSTreeLabel := oldLabels[nfdOSTreeVersionLabelKey]

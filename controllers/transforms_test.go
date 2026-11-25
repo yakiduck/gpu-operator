@@ -2275,8 +2275,7 @@ func TestTransformVFIOManager(t *testing.T) {
 			description: "transform vfio manager",
 			daemonset: NewDaemonset().
 				WithContainer(corev1.Container{Name: "nvidia-vfio-manager"}).
-				WithContainer(corev1.Container{Name: "sidecar"}).
-				WithInitContainer(corev1.Container{Name: "k8s-driver-manager"}),
+				WithContainer(corev1.Container{Name: "sidecar"}),
 			clusterPolicySpec: &gpuv1.ClusterPolicySpec{
 				VFIOManager: gpuv1.VFIOManagerSpec{
 					Repository:       "nvcr.io/nvidia/cloud-native",
@@ -2308,13 +2307,6 @@ func TestTransformVFIOManager(t *testing.T) {
 				WithContainer(corev1.Container{
 					Name:      "sidecar",
 					Resources: resources,
-				}).
-				WithInitContainer(corev1.Container{
-					Name:            "k8s-driver-manager",
-					Image:           "nvcr.io/nvidia/cloud-native/k8s-driver-manager:v1.0.0",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Env:             mockEnvCore,
-					Resources:       resources,
 				}).
 				WithPullSecret(secret),
 		},

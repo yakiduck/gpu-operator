@@ -1023,15 +1023,15 @@ func getDevicePluginTestOutput(testCase string) map[string]interface{} {
 	// default output
 	output := map[string]interface{}{
 		"numDaemonsets":               1,
-		"configManagerInitPresent":    false,
-		"configManagerSidecarPresent": false,
+		"configManagerInitPresent":    true,
+		"configManagerSidecarPresent": true,
 		"devicePluginImage":           "nvcr.io/nvidia/k8s-device-plugin:v0.12.0-ubi8",
 		"imagePullSecret":             "ngc-secret",
 	}
 
 	switch testCase {
 	case "default":
-		output["env"] = map[string]string{}
+		output["env"] = map[string]string{"CONFIG_FILE": "/config/config.yaml"}
 	case "custom-config":
 		// Ensure config-manager containers are added
 		output["configManagerInitPresent"] = true

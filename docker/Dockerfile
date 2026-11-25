@@ -17,9 +17,9 @@
 # CUDA SAMPLES v12.9 is used as that is the latest version with Maxwell support.
 ARG CUDA_SAMPLES_VERSION=12.9
 
-FROM golang:1.26.11@sha256:7af425da11f4fc1a9308eb704369e3f6d1c44e35bac0f874a59ade3f20fdc07e AS builder
+FROM hub.easystack.cn/multiarch/golang:1.26.11 AS builder
 
-ARG GOPROXY="https://proxy.golang.org,direct"
+ARG GOPROXY="http://goproxy.easystack.io,direct"
 ENV GOPROXY=$GOPROXY
 
 WORKDIR /workspace
@@ -43,7 +43,7 @@ ARG VERSION="unknown"
 ARG GIT_COMMIT="unknown"
 RUN make cmds
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:5426a8f45e80a07168a30ea24d84f266094b3756624a5508cc53927e6ee39e09 AS sample-builder
+FROM hub.easystack.cn/multiarch/ubi:9.9-1795197514 AS sample-builder
 
 RUN ARCH=$(uname -m) && OS_ARCH=${ARCH/amd64/x86_64} && OS_ARCH=${ARCH/aarch64/sbsa} && OS_ARCH=${ARCH/arm64/sbsa} \
     dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel9/$OS_ARCH/cuda-rhel9.repo
@@ -76,7 +76,7 @@ RUN curl -L https://codeload.github.com/NVIDIA/cuda-samples/tar.gz/refs/tags/v${
 # Build a static busybox layout: one binary plus applet symlinks (sh, rm,
 # ln, sleep, cat, ...) so PATH-resolved commands in init-container wrappers
 # and lifecycle hooks keep working on the non-*-dev* distroless base.
-FROM busybox:1.37.0-musl@sha256:5cec3fc171c87218698e85a52af7087de727372aae264a787b8112901a5b0092 AS shell
+FROM hub.easystack.cn/multiarch/busybox:1.37.0-musl AS shell
 RUN mkdir /busybox \
  && cp /bin/busybox /busybox/busybox \
  && /busybox/busybox --install -s /busybox
@@ -88,7 +88,7 @@ RUN /tmp/check-busybox-prefer-applets.sh /busybox/busybox
 
 # The C/C++ distroless image is used as a base since the CUDA vectorAdd
 # sample application depends on C/C++ libraries.
-FROM nvcr.io/nvidia/distroless/cc:v4.2.1@sha256:e0190795c9cc8e79c1520b5c3539b16abc5a3dcadf4edf1ddccf24ac71cc84c1
+FROM hub.easystack.cn/multiarch/cc:v4.2.1
 
 ENV NVIDIA_VISIBLE_DEVICES=void
 

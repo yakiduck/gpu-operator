@@ -15,7 +15,7 @@ spec:
 
   sandboxWorkloads:
     enabled: false
-    defaultWorkload: "container"
+    defaultWorkload: "none"
 
   mig:
     strategy: single
